@@ -49,6 +49,7 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
         void contextZoomIn();
         void contextCopyText();
         void contextAction(String action);
+        void contextBookmark();
     }
 
     @Override
@@ -86,8 +87,10 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
                 }
                 else if (id == R.id.context_exact) {
                     contextMenuListener.contextAction("exact");
-                }else if (id == R.id.context_eval) {
+                }                else if (id == R.id.context_eval) {
                     contextMenuListener.contextAction("eval");
+                } else if (id == R.id.context_bookmark) {
+                    contextMenuListener.contextBookmark();
                 }
 
                 return true;
@@ -104,5 +107,6 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
         menu.findItem(R.id.context_approx).setOnMenuItemClickListener(contextMenu);
         menu.findItem(R.id.context_exact).setOnMenuItemClickListener(contextMenu);
         menu.findItem(R.id.context_eval).setOnMenuItemClickListener(contextMenu);
+        menu.findItem(R.id.context_bookmark).setOnMenuItemClickListener(contextMenu);
     }
 }

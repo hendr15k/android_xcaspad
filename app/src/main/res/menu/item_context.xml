@@ -12,6 +12,11 @@
         app:showAsAction="never"
         android:title="copy text" />
     <item
+        android:id="@+id/context_bookmark"
+        android:orderInCategory="101"
+        app:showAsAction="never"
+        android:title="bookmark" />
+    <item
         android:id="@+id/context_simplify"
         android:orderInCategory="101"
         app:showAsAction="never"

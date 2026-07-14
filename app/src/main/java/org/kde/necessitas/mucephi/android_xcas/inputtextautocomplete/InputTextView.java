@@ -18,7 +18,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.ArrayAdapter;
-import android.support.v7.widget.AppCompatAutoCompleteTextView;
+import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 
 import org.kde.necessitas.mucephi.android_xcas.R;
 

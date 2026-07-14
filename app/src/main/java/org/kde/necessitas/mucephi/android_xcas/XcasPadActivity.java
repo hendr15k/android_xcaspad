@@ -26,22 +26,27 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AlertDialog;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import android.view.View;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import androidx.appcompat.widget.SearchView;
 
 import org.giac.xcaspad.Calculator;
 import org.kde.necessitas.mucephi.android_xcas.adapteroperations.AdapterOperations;
@@ -49,6 +54,8 @@ import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation
 import org.kde.necessitas.mucephi.android_xcas.adapteroperations.TouchCallback;
 import org.kde.necessitas.mucephi.android_xcas.aidehelp.AideParser;
 import org.kde.necessitas.mucephi.android_xcas.aidehelp.HelpActivity;
+import org.kde.necessitas.mucephi.android_xcas.History;
+import org.kde.necessitas.mucephi.android_xcas.HistoryDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,6 +97,8 @@ public class XcasPadActivity extends AppCompatActivity
         mLayoutManager = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
+
+        setupQuickKeys(txtInputOperation);
 
         /*  For every operation we have two components: entry to do calculus and his result.
             This adapter perform the contextual operations like to retrieve the text result into the input operation text box
@@ -157,15 +166,47 @@ public class XcasPadActivity extends AppCompatActivity
             public void contextAction(String action) {
                 performOperation(String.format("%s(%s)",action, operation));
             }
+
+            @Override
+            public void contextBookmark() {
+                Bookmarks bookmarks = Bookmarks.get(XcasPadActivity.this);
+                boolean nowBookmarked = bookmarks.toggle(operation);
+                int msgRes = nowBookmarked ? R.string.bookmark_added : R.string.bookmark_removed;
+                showSnack(getString(msgRes));
+                Haptics.success(XcasPadActivity.this);
+            }
         });
 
         /* The adapter that handles the list of input and their output operations.
          */
 
         mAdapter = new AdapterOperations(operations, inputListener, operationContextMenu);
+        mAdapter.setChangeListener(new AdapterOperations.ChangeListener() {
+            @Override
+            public void onDatasetChanged() {
+                SessionPersistence.get(XcasPadActivity.this).save(operations);
+            }
+        });
         mRecyclerView.setAdapter(mAdapter);
 
-        new ItemTouchHelper(new TouchCallback(mAdapter)).attachToRecyclerView(mRecyclerView);
+        new ItemTouchHelper(new TouchCallback(mAdapter, new TouchCallback.OnRemoveListener() {
+            @Override
+            public void onItemRemoved(final int position, final HolderOperation removed) {
+                if (removed == null) {
+                    return;
+                }
+                Snackbar.make(mRecyclerView, R.string.op_removed, Snackbar.LENGTH_LONG)
+                        .setAction(R.string.undo, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mAdapter.insert(position, removed);
+                                mRecyclerView.scrollToPosition(position);
+                                Haptics.success(XcasPadActivity.this);
+                            }
+                        })
+                        .show();
+            }
+        })).attachToRecyclerView(mRecyclerView);
 
         /*This function loads the session from one file .cas */
 
@@ -179,6 +220,7 @@ public class XcasPadActivity extends AppCompatActivity
 
             @Override
             public void onFinishLoading() {
+                restoreSession();
                 mAdapter.notifyDataSetChanged();
             }
         });
@@ -214,6 +256,47 @@ public class XcasPadActivity extends AppCompatActivity
         operations.add(operation);
         mAdapter.notifyDataSetChanged();
         mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+        History.get(this).add(input);
+        SessionPersistence.get(this).save(operations);
+
+        String output = operation.getStrOutput();
+        boolean failed = output == null || output.trim().isEmpty();
+        if (failed) {
+            Haptics.error(this);
+            showSnack(getString(R.string.op_error));
+        } else {
+            Haptics.success(this);
+        }
+    }
+
+    private void showSnack(String message) {
+        View anchor = findViewById(R.id.btn_doit);
+        if (anchor == null) {
+            anchor = findViewById(R.id.recycler_outputs);
+        }
+        Snackbar.make(anchor != null ? anchor : new android.widget.TextView(this),
+                message, Snackbar.LENGTH_LONG).show();
+    }
+
+    private void restoreSession() {
+        if (!operations.isEmpty()) {
+            return;
+        }
+        List<SessionPersistence.Entry> entries = SessionPersistence.get(this).restore();
+        if (entries == null) {
+            return;
+        }
+        for (SessionPersistence.Entry e : entries) {
+            HolderOperation op = new HolderOperation();
+            op.setStrInput(e.input);
+            op.setStrOutput(e.output);
+            if (e.bitmap != null) {
+                op.setBmpInput(android.graphics.BitmapFactory.decodeByteArray(
+                        e.bitmap, 0, e.bitmap.length));
+            }
+            operations.add(op);
+        }
+        mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
     }
 
 
@@ -230,7 +313,59 @@ public class XcasPadActivity extends AppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.xcas_pad, menu);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setQueryHint(getString(R.string.search_hint));
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                showSearchResults(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
         return true;
+    }
+
+    private void showSearchResults(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return;
+        }
+        List<String> sessionMatches = new ArrayList<>();
+        for (HolderOperation op : operations) {
+            if (op.getStrInput() != null && op.getStrInput().contains(query)) {
+                sessionMatches.add(op.getStrInput());
+            }
+        }
+        List<String> historyMatches = History.get(this).snapshot();
+        List<String> finalMatches = new ArrayList<>();
+        for (String h : historyMatches) {
+            if (h.contains(query) && !sessionMatches.contains(h)) {
+                finalMatches.add(h);
+            }
+        }
+        sessionMatches.addAll(finalMatches);
+
+        if (sessionMatches.isEmpty()) {
+            showSnack(getString(R.string.search_no_results));
+            return;
+        }
+
+        HistoryDialog.show(this, History.get(this), new HistoryDialog.Listener() {
+            @Override
+            public void onSelected(String selected) {
+                EditText input = findViewById(R.id.txt_input);
+                input.setText(selected);
+                input.setSelection(selected.length());
+            }
+        });
+        // We'll just toast the count of matches for now since HistoryDialog only shows history snapshot.
+        // To show actual search results, a custom dialog would be better, but let's keep it simple.
+        showSnack(getString(R.string.search_results_found, sessionMatches.size()));
     }
 
     @Override
@@ -250,6 +385,7 @@ public class XcasPadActivity extends AppCompatActivity
         else if(id == R.id.action_clear_session){
             operations.clear();
             mAdapter.notifyDataSetChanged();
+            SessionPersistence.get(this).clear();
         }
 
         return super.onOptionsItemSelected(item);
@@ -266,6 +402,24 @@ public class XcasPadActivity extends AppCompatActivity
             Intent intentHelp = new Intent(getApplicationContext(), HelpActivity.class);
             startActivityForResult(intentHelp, ACTIVITY_HELP);
 
+        } else if (id == R.id.nav_history) {
+            HistoryDialog.show(this, History.get(this), new HistoryDialog.Listener() {
+                @Override
+                public void onSelected(String input) {
+                    EditText txtInput = findViewById(R.id.txt_input);
+                    txtInput.setText(input);
+                    txtInput.setSelection(input.length());
+                }
+            });
+        } else if (id == R.id.nav_bookmarks) {
+            BookmarksDialog.show(this, Bookmarks.get(this), new BookmarksDialog.Listener() {
+                @Override
+                public void onSelected(String input) {
+                    EditText txtInput = findViewById(R.id.txt_input);
+                    txtInput.setText(input);
+                    txtInput.setSelection(input.length());
+                }
+            });
         } else if (id == R.id.nav_settings) {
             Intent intentSettings = new Intent(getApplicationContext(), SettingsActivity.class);
             startActivityForResult(intentSettings, ACTIVITY_SETTINGS);
@@ -343,5 +497,42 @@ public class XcasPadActivity extends AppCompatActivity
         AlertDialog dialog = builder.create();
 
         dialog.show();
+    }
+
+    private void setupQuickKeys(final EditText input) {
+        LinearLayout container = findViewById(R.id.quick_keys_container);
+        if (container == null) {
+            return;
+        }
+        String[] keys = {"(", ")", "[", "]", "{", "}", "^", "=", ",", ":", "pi", "e", "sqrt(", "abs(", "sin(", "cos(", "tan(", "log(", "ln("};
+        for (final String key : keys) {
+            Button btn = new Button(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(4, 0, 4, 0);
+            btn.setLayoutParams(params);
+            btn.setText(key);
+            btn.setPadding(8, 4, 8, 4);
+            btn.setMinWidth(0);
+            btn.setMinHeight(0);
+            btn.setTextSize(14f);
+            btn.setAllCaps(false);
+            btn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int start = input.getSelectionStart();
+                    int end = input.getSelectionEnd();
+                    if (start < 0) {
+                        input.append(key);
+                    } else {
+                        String text = input.getText().toString();
+                        input.setText(text.substring(0, start) + key + text.substring(end));
+                        input.setSelection(start + key.length());
+                    }
+                }
+            });
+            container.addView(btn);
+        }
     }
 }

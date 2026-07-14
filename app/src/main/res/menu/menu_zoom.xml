@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/zoom_reset"
+        android:title="@string/zoom_reset"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/zoom_copy"
+        android:title="@string/zoom_copy"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/zoom_share"
+        android:title="@string/zoom_share"
+        app:showAsAction="ifRoom" />
+</menu>

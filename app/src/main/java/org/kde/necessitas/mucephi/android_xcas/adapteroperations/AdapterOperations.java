@@ -2,7 +2,7 @@ package org.kde.necessitas.mucephi.android_xcas.adapteroperations;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.v7.widget.RecyclerView;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +23,15 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
     private List<HolderOperation> mDataset = new ArrayList<HolderOperation>();
     private InputListener inputListener;
     private View.OnCreateContextMenuListener menuListener;
+    private ChangeListener changeListener;
+
+    public interface ChangeListener {
+        void onDatasetChanged();
+    }
+
+    public void setChangeListener(ChangeListener listener) {
+        this.changeListener = listener;
+    }
 
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -115,16 +124,38 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
 
     }
 
-    public void remove(int position){
+    public HolderOperation remove(int position){
         if (position < 0 || position >= mDataset.size()) {
+            return null;
+        }
+        HolderOperation removed = mDataset.remove(position);
+        notifyDataSetChanged();
+        if (changeListener != null) {
+            changeListener.onDatasetChanged();
+        }
+        return removed;
+    }
+
+    public void insert(int position, HolderOperation op){
+        if (op == null) {
             return;
         }
-        mDataset.remove(position);
+        if (position < 0 || position > mDataset.size()) {
+            position = mDataset.size();
+        }
+        mDataset.add(position, op);
         notifyDataSetChanged();
+        if (changeListener != null) {
+            changeListener.onDatasetChanged();
+        }
     }
 
     public void swap(int i, int j){
         Collections.swap(mDataset, i, j);
+        notifyItemMoved(i, j);
+        if (changeListener != null) {
+            changeListener.onDatasetChanged();
+        }
     }
 
     @Override

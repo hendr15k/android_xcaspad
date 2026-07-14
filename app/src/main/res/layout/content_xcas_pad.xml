@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,17 +8,38 @@
     tools:context="org.kde.necessitas.mucephi.android_xcas.XcasPadActivity"
     tools:showIn="@layout/app_bar_xcas_pad">
 
-    <android.support.v7.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_outputs"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
         android:scrollbars="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/txt_input"
+        app:layout_constraintBottom_toTopOf="@+id/quick_keys_scroll"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         tools:listitem="@layout/row_prettyprint_operation"/>
+
+    <HorizontalScrollView
+        android:id="@+id/quick_keys_scroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:scrollbars="none"
+        app:layout_constraintBottom_toTopOf="@+id/txt_input"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:id="@+id/quick_keys_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="4dp">
+            <!-- Buttons will be injected programmatically to keep XML clean -->
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <org.kde.necessitas.mucephi.android_xcas.inputtextautocomplete.InputTextView
         android:id="@+id/txt_input"
@@ -44,7 +65,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginRight="8dp" />-->
 
-    <android.support.design.widget.FloatingActionButton
+    <com.google.android.material.FloatingActionButton
         android:id="@+id/btn_doit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -59,4 +80,4 @@
         app:layout_constraintTop_toBottomOf="@+id/recycler_outputs"
         app:srcCompat="@drawable/ic_menu_send" />
 
-</android.support.constraint.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,7 +1,7 @@
 package org.kde.necessitas.mucephi.android_xcas.adapteroperations;
 
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.ItemTouchHelper;
 
 /**
  * Created by leonel on 28/11/17.
@@ -9,10 +9,20 @@ import android.support.v7.widget.helper.ItemTouchHelper;
 
 public class TouchCallback extends ItemTouchHelper.Callback{
 
+    public interface OnRemoveListener {
+        void onItemRemoved(int position, HolderOperation removed);
+    }
+
     private final AdapterOperations mAdapter;
+    private final OnRemoveListener onRemove;
 
     public TouchCallback(AdapterOperations adapter) {
+        this(adapter, null);
+    }
+
+    public TouchCallback(AdapterOperations adapter, OnRemoveListener onRemove) {
         mAdapter = adapter;
+        this.onRemove = onRemove;
     }
 
     @Override
@@ -54,6 +64,10 @@ public class TouchCallback extends ItemTouchHelper.Callback{
 
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
-        mAdapter.remove(viewHolder.getAdapterPosition());
+        int pos = viewHolder.getAdapterPosition();
+        HolderOperation removed = mAdapter.remove(pos);
+        if (onRemove != null) {
+            onRemove.onItemRemoved(pos, removed);
+        }
     }
 }
