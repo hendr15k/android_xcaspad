@@ -3,4 +3,11 @@
     <color name="colorPrimary">#2b487f</color>
     <color name="colorPrimaryDark">#2b487f</color>
     <color name="colorAccent">#345e0c</color>
+    
+    <color name="windowBackground">#FFFFFFFF</color>
+    <color name="cardBackground">#FFFFFFFF</color>
+    <color name="primaryText">#FF000000</color>
+    <color name="secondaryText">#FF555555</color>
+    <color name="inputBackground">#FFFAFAFA</color>
+    <color name="divider">#FFE0E0E0</color>
 </resources>

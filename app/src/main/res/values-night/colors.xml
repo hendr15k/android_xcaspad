@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="windowBackground">#121212</color>
+    <color name="cardBackground">#1E1E1E</color>
+    <color name="primaryText">#ECECEC</color>
+    <color name="secondaryText">#B0B0B0</color>
+    <color name="inputBackground">#262626</color>
+    <color name="divider">#2C2C2C</color>
+</resources>
