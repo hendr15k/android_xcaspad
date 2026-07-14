@@ -39,4 +39,7 @@
     <string name="output_dialog_use">Use as input</string>
     <string name="output_dialog_copy">Copy</string>
     <string name="output_dialog_dismiss">Close</string>
+    <string name="save_session_success">Session saved to Downloads/%1$s</string>
+    <string name="save_session_failed">Could not save session</string>
+    <string name="hint_ime_action_done">Press Enter or Done to evaluate</string>
 </resources>

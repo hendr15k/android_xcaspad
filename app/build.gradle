@@ -13,8 +13,8 @@ android {
         applicationId "org.kde.necessitas.mucephi.android_xcas"
         minSdkVersion 15
         targetSdkVersion 34
-        versionCode 17
-        versionName "cairo_render+history+autosave+bookmarks+darkmode+share+autocomplete"
+        versionCode 18
+        versionName "cairo_render+history+autosave+bookmarks+darkmode+share+autocomplete+mediastore_savesession"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

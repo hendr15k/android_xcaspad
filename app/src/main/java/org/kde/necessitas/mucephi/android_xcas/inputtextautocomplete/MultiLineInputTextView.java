@@ -70,8 +70,8 @@ public class MultiLineInputTextView extends InputTextView {
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         InputConnection connection = super.onCreateInputConnection(outAttrs);
         if (connection != null) {
+            // we remove the hardcoded overrides because we use XML imeOptions="actionDone"
             outAttrs.imeOptions = outAttrs.imeOptions
-                    | EditorInfo.IME_FLAG_NO_ENTER_ACTION
                     | EditorInfo.IME_FLAG_NO_FULLSCREEN;
         }
         return connection;

@@ -244,23 +244,38 @@ public class XcasPadActivity extends AppCompatActivity
         findViewById(R.id.btn_doit).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                String input = txtInputOperation.getText().toString();
-                //input = "some_tests";
-                if(input.equals("some_tests")) {
-                    for (String op : TestsOperations.operations) {
-                        performOperation(op);
-                    }
-                }
-                else if(input.contains("plot")){
-                    showMessage("Graphics are not longer supported by this version.");
-                }
-                else {
-                    performOperation(input);
-                    txtInputOperation.setText("");
-                }
+                evaluateCurrentInput();
             }
         });
+
+        txtInputOperation.setOnEditorActionListener(new android.widget.TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(android.widget.TextView v, int actionId, android.view.KeyEvent event) {
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                    evaluateCurrentInput();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void evaluateCurrentInput() {
+        final EditText txtInputOperation = findViewById(R.id.txt_input);
+        if (txtInputOperation == null) {
+            return;
+        }
+        String input = txtInputOperation.getText().toString();
+        if (input.equals("some_tests")) {
+            for (String op : TestsOperations.operations) {
+                performOperation(op);
+            }
+        } else if (input.contains("plot")) {
+            showMessage("Graphics are not longer supported by this version.");
+        } else {
+            performOperation(input);
+            txtInputOperation.setText("");
+        }
     }
 
     /* This is the main function that reads the input an makes the operation through the callings to the JNI
