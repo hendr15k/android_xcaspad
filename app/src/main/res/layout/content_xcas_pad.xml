@@ -42,7 +42,7 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <org.kde.necessitas.mucephi.android_xcas.inputtextautocomplete.InputTextView
+    <org.kde.necessitas.mucephi.android_xcas.inputtextautocomplete.MultiLineInputTextView
         android:id="@+id/txt_input"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -54,7 +54,9 @@
         android:textColorHint="@color/secondaryText"
         android:ems="10"
         android:hint="type operation"
-        android:inputType="none|text|textMultiLine|textWebEditText|textFilter|textNoSuggestions|textVisiblePassword"
+        android:completionThreshold="1"
+        android:dropDownHeight="220dp"
+        android:popupBackground="@color/inputBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btn_doit"
         app:layout_constraintStart_toStartOf="parent" />
