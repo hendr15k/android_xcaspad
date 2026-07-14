@@ -35,9 +35,12 @@ import java.util.Set;
  */
 public final class History {
 
-    public static final int MAX_ENTRIES = 100;
+    public static final int DEFAULT_MAX_ENTRIES = 100;
+    public static final int MIN_ENTRIES = 10;
+    public static final int MAX_ENTRIES = 500;
 
     private static final String KEY_INPUT_HISTORY = "input_history";
+    private static final String KEY_MAX_ENTRIES = "history_max_entries";
 
     private static History instance;
 
@@ -60,6 +63,36 @@ public final class History {
         return instance;
     }
 
+    public synchronized int getMaxEntries() {
+        int value = prefs.getInt(KEY_MAX_ENTRIES, DEFAULT_MAX_ENTRIES);
+        if (value < MIN_ENTRIES) {
+            return MIN_ENTRIES;
+        }
+        if (value > MAX_ENTRIES) {
+            return MAX_ENTRIES;
+        }
+        return value;
+    }
+
+    public synchronized void setMaxEntries(int maxEntries) {
+        int clamped = maxEntries;
+        if (clamped < MIN_ENTRIES) {
+            clamped = MIN_ENTRIES;
+        }
+        if (clamped > MAX_ENTRIES) {
+            clamped = MAX_ENTRIES;
+        }
+        if (clamped == getMaxEntries()) {
+            return;
+        }
+        prefs.edit().putInt(KEY_MAX_ENTRIES, clamped).apply();
+        while (entries.size() > clamped) {
+            String first = entries.iterator().next();
+            entries.remove(first);
+        }
+        persist();
+    }
+
     public synchronized void add(String input) {
         if (input == null) {
             return;
@@ -72,7 +105,7 @@ public final class History {
             entries.remove(trimmed);
         }
         entries.add(trimmed);
-        while (entries.size() > MAX_ENTRIES) {
+        while (entries.size() > getMaxEntries()) {
             String first = entries.iterator().next();
             entries.remove(first);
         }

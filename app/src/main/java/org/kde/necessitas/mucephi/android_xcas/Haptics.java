@@ -19,22 +19,44 @@
 package org.kde.necessitas.mucephi.android_xcas;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 
 /**
- * Small wrapper around {@link Vibrator} that gracefully handles API differences.
- * <p>
- * Feedback is intentionally light so it does not feel jarring when the user
- * chains many computations.
+ * Small wrapper around {@link Vibrator} that gracefully handles API differences
+ * and lets the user opt out of vibration feedback from the Settings screen.
  */
 public final class Haptics {
+
+    private static final String KEY_HAPTICS_ENABLED = "haptics_enabled";
 
     private static final long SUCCESS_DURATION_MS = 18;
     private static final long ERROR_DURATION_MS = 60;
 
+    private static volatile boolean cachedEnabled = true;
+    private static volatile boolean initialized = false;
+
     private Haptics() {
+    }
+
+    public static void setEnabled(Context context, boolean enabled) {
+        cachedEnabled = enabled;
+        initialized = true;
+        SharedPreferences prefs = context.getApplicationContext()
+                .getSharedPreferences(AppSpace.PREFS_XCASPAD, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean(KEY_HAPTICS_ENABLED, enabled).apply();
+    }
+
+    private static boolean isEnabled(Context context) {
+        if (!initialized) {
+            SharedPreferences prefs = context.getApplicationContext()
+                    .getSharedPreferences(AppSpace.PREFS_XCASPAD, Context.MODE_PRIVATE);
+            cachedEnabled = prefs.getBoolean(KEY_HAPTICS_ENABLED, true);
+            initialized = true;
+        }
+        return cachedEnabled;
     }
 
     public static void success(Context context) {
@@ -46,7 +68,7 @@ public final class Haptics {
     }
 
     private static void perform(Context context, long durationMs, boolean pattern) {
-        if (context == null) {
+        if (context == null || !isEnabled(context)) {
             return;
         }
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);

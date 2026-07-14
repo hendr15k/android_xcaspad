@@ -175,6 +175,15 @@ public class XcasPadActivity extends AppCompatActivity
                 showSnack(getString(msgRes));
                 Haptics.success(XcasPadActivity.this);
             }
+
+            @Override
+            public void contextShareImage() {
+                if (img == null) {
+                    showSnack(getString(R.string.share_image_unavailable));
+                    return;
+                }
+                shareBitmap(img, operation);
+            }
         });
 
         /* The adapter that handles the list of input and their output operations.
@@ -276,6 +285,14 @@ public class XcasPadActivity extends AppCompatActivity
         }
         Snackbar.make(anchor != null ? anchor : new android.widget.TextView(this),
                 message, Snackbar.LENGTH_LONG).show();
+    }
+
+    private void shareBitmap(Bitmap bitmap, String caption) {
+        if (bitmap == null) {
+            showSnack(getString(R.string.share_image_unavailable));
+            return;
+        }
+        ImageShareHelper.share(this, bitmap, caption);
     }
 
     private void restoreSession() {

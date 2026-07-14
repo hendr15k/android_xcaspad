@@ -131,6 +131,14 @@ public class ZoomableImageView extends AppCompatImageView {
         post(this::fitToView);
     }
 
+    public android.graphics.Bitmap getRenderedBitmap() {
+        android.graphics.drawable.Drawable d = getDrawable();
+        if (d == null || !(d instanceof android.graphics.drawable.BitmapDrawable)) {
+            return null;
+        }
+        return ((android.graphics.drawable.BitmapDrawable) d).getBitmap();
+    }
+
     public void resetZoom() {
         currentScale = 1f;
         fitToView();

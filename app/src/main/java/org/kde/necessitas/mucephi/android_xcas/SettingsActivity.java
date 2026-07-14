@@ -22,12 +22,12 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
+import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import org.kde.necessitas.mucephi.android_xcas.aidehelp.AideParser;
 
@@ -83,7 +83,7 @@ public class SettingsActivity extends AppCompatActivity {
         String index_lang_help = settings.getString("lang_help", "2");
 
         for(int pos = 0; pos < langs.size(); pos++) {
-            int sel = new Integer(index_lang_help).intValue();
+            int sel = Integer.parseInt(index_lang_help);
             if(langs.get(pos).id == sel) {
                 splangs.setSelection(pos);
                 break;
@@ -107,6 +107,38 @@ public class SettingsActivity extends AppCompatActivity {
 
             }
 
+        });
+
+        final SeekBar historySeek = findViewById(R.id.seek_history_limit);
+        final TextView historyValueLabel = findViewById(R.id.txt_history_limit_value);
+        final History history = History.get(this);
+        historySeek.setProgress(history.getMaxEntries());
+        historyValueLabel.setText(getString(R.string.settings_history_limit, history.getMaxEntries()));
+        historySeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int snapped = Math.max(History.MIN_ENTRIES, progress);
+                historyValueLabel.setText(getString(R.string.settings_history_limit, snapped));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                history.setMaxEntries(Math.max(History.MIN_ENTRIES, seekBar.getProgress()));
+            }
+        });
+
+        final com.google.android.material.switchmaterial.SwitchMaterial hapticsSwitch = findViewById(R.id.switch_haptics);
+        hapticsSwitch.setChecked(settings.getBoolean("haptics_enabled", true));
+        hapticsSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(android.widget.CompoundButton buttonView, boolean isChecked) {
+                settings.edit().putBoolean("haptics_enabled", isChecked).apply();
+                Haptics.setEnabled(buttonView.getContext(), isChecked);
+            }
         });
 
         findViewById(R.id.btn_settings).setOnClickListener(new View.OnClickListener() {

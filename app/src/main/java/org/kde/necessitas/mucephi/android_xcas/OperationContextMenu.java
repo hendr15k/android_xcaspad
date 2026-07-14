@@ -48,6 +48,7 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
         void setHolderOperation(boolean isInput);
         void contextZoomIn();
         void contextCopyText();
+        void contextShareImage();
         void contextAction(String action);
         void contextBookmark();
     }
@@ -91,6 +92,8 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
                     contextMenuListener.contextAction("eval");
                 } else if (id == R.id.context_bookmark) {
                     contextMenuListener.contextBookmark();
+                } else if (id == R.id.context_share_image) {
+                    contextMenuListener.contextShareImage();
                 }
 
                 return true;
@@ -108,5 +111,6 @@ public class OperationContextMenu implements View.OnCreateContextMenuListener{
         menu.findItem(R.id.context_exact).setOnMenuItemClickListener(contextMenu);
         menu.findItem(R.id.context_eval).setOnMenuItemClickListener(contextMenu);
         menu.findItem(R.id.context_bookmark).setOnMenuItemClickListener(contextMenu);
+        menu.findItem(R.id.context_share_image).setOnMenuItemClickListener(contextMenu);
     }
 }

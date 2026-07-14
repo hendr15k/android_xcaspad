@@ -99,6 +99,11 @@ public class ZoomInActivity extends AppCompatActivity {
         if (currentExpression == null || currentExpression.isEmpty()) {
             return;
         }
+        Bitmap bm = imageView != null ? imageView.getRenderedBitmap() : null;
+        if (bm != null) {
+            ImageShareHelper.share(this, bm, currentExpression);
+            return;
+        }
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("text/plain");
         send.putExtra(Intent.EXTRA_TEXT, currentExpression);

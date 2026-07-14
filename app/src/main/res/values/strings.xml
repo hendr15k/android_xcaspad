@@ -29,4 +29,10 @@
     <string name="bookmark_remove">Remove bookmark</string>
     <string name="bookmark_added">Bookmarked</string>
     <string name="bookmark_removed">Bookmark removed</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_history_limit">History size: %1$d entries</string>
+    <string name="settings_haptics">Vibration feedback</string>
+    <string name="share_image_title">Share output</string>
+    <string name="share_image_unavailable">No image to share</string>
+    <string name="share_image_failed">Could not share image</string>
 </resources>
