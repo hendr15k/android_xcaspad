@@ -35,4 +35,8 @@
     <string name="share_image_title">Share output</string>
     <string name="share_image_unavailable">No image to share</string>
     <string name="share_image_failed">Could not share image</string>
+    <string name="output_dialog_title">Output</string>
+    <string name="output_dialog_use">Use as input</string>
+    <string name="output_dialog_copy">Copy</string>
+    <string name="output_dialog_dismiss">Close</string>
 </resources>

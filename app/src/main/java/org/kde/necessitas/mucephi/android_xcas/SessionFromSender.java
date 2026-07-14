@@ -96,13 +96,18 @@ public class SessionFromSender {
         Uri data = ((Activity) context).getIntent().getData();
 
         try {
-            String line;
             InputStream is = context.getContentResolver().openInputStream(data);
+            if (is == null) {
+                return list;
+            }
             br = new BufferedReader(new InputStreamReader(is));
-
+            String line;
+            boolean keepInput = true;
             while ((line = br.readLine()) != null) {
-                list.add(line);
-                br.readLine();
+                if (keepInput && !line.trim().isEmpty()) {
+                    list.add(line);
+                }
+                keepInput = !keepInput;
             }
 
         } catch (Exception e) {

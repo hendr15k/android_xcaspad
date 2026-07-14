@@ -46,6 +46,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import androidx.appcompat.widget.SearchView;
 
 import org.giac.xcaspad.Calculator;
@@ -112,7 +113,11 @@ public class XcasPadActivity extends AppCompatActivity
 
             @Override
             public void onOutputClick(String result) {
-                txtInputOperation.setText(result);
+                if (result != null && !result.trim().isEmpty()) {
+                    showOutputDialog(result);
+                } else {
+                    txtInputOperation.setText(result);
+                }
             }
 
             @Override
@@ -293,6 +298,48 @@ public class XcasPadActivity extends AppCompatActivity
             return;
         }
         ImageShareHelper.share(this, bitmap, caption);
+    }
+
+    private void showOutputDialog(String text) {
+        final EditText textView = new EditText(this);
+        textView.setText(text);
+        textView.setTextIsSelectable(true);
+        textView.setSingleLine(false);
+        textView.setHorizontalScrollBarEnabled(true);
+        textView.setVerticalScrollBarEnabled(true);
+        textView.setTextColor(getResources().getColor(R.color.primaryText));
+        textView.setBackgroundColor(getResources().getColor(R.color.inputBackground));
+        textView.setPadding(32, 32, 32, 32);
+        textView.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.NORMAL);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setBackgroundColor(getResources().getColor(R.color.windowBackground));
+        scroll.addView(textView);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.output_dialog_title)
+                .setView(scroll)
+                .setNegativeButton(R.string.output_dialog_dismiss, null)
+                .setNeutralButton(R.string.output_dialog_copy, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        ClipData clip = ClipData.newPlainText("xcas pad", text);
+                        clipboard.setPrimaryClip(clip);
+                        showSnack(getString(R.string.zoom_copied));
+                        Haptics.success(XcasPadActivity.this);
+                    }
+                })
+                .setPositiveButton(R.string.output_dialog_use, new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int which) {
+                        EditText input = findViewById(R.id.txt_input);
+                        input.setText(text);
+                        input.setSelection(text.length());
+                    }
+                })
+                .create();
+        dialog.show();
     }
 
     private void restoreSession() {
