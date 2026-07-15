@@ -23,6 +23,9 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -209,6 +212,20 @@ public class SaveSession {
         try {
             Intent view = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
             view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            PackageManager pm = appContext.getPackageManager();
+            List<ResolveInfo> resolveInfos = pm.queryIntentActivities(view, PackageManager.MATCH_DEFAULT_ONLY);
+            if (resolveInfos != null) {
+                for (ResolveInfo info : resolveInfos) {
+                    if (info.activityInfo != null && info.activityInfo.applicationInfo != null) {
+                        if ((info.activityInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                            view.setPackage(info.activityInfo.packageName);
+                            break;
+                        }
+                    }
+                }
+            }
+
             appContext.startActivity(view);
         } catch (Exception ignored) {
         }
