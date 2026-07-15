@@ -1,7 +1,6 @@
 package org.kde.necessitas.mucephi.android_xcas.adapteroperations;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
