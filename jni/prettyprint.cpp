@@ -159,15 +159,9 @@ void PrettyPrint::fl_line(int x, int y, int x1, int y1){
 
 void PrettyPrint::fl_arc(int x, int y, int w, int h, double a1, double a2){
 
-    //FIXME to draw an arc
-    /*cairo_set_line_width (c, 1);
-    cairo_move_to (c, x, y);
-    cairo_arc(c, x, y, w, a1, a2);
-    cairo_stroke (c);*/
-
+    cairo_set_line_width (cairo, 1);
     cairo_move_to (cairo, x, y);
-    cairo_line_to(cairo, x+w, y-h);
-    cairo_set_line_width (cairo, 1.5);
+    cairo_arc(cairo, x, y, w, a1, a2);
     cairo_stroke (cairo);
 }
 
