@@ -267,14 +267,39 @@ public class XcasPadActivity extends AppCompatActivity
         }
         String input = txtInputOperation.getText().toString();
         if (input.equals("some_tests")) {
-            for (String op : TestsOperations.operations) {
-                performOperation(op);
-            }
+            performOperationsBatch(TestsOperations.operations);
         } else if (input.contains("plot")) {
             showMessage("Graphics are not longer supported by this version.");
         } else {
             performOperation(input);
             txtInputOperation.setText("");
+        }
+    }
+
+    /* This function batches the UI updates for tests */
+    private void performOperationsBatch(String[] inputs){
+        boolean hasFailed = false;
+        for (String input : inputs) {
+            HolderOperation operation = Calculator.prettyPrint(input);
+            operations.add(operation);
+            History.get(this).add(input);
+
+            String output = operation.getStrOutput();
+            boolean failed = output == null || output.trim().isEmpty();
+            if (failed) {
+                hasFailed = true;
+            }
+        }
+
+        mAdapter.notifyDataSetChanged();
+        mRecyclerView.scrollToPosition(mAdapter.getItemCount()-1);
+        SessionPersistence.get(this).save(operations);
+
+        if (hasFailed) {
+            Haptics.error(this);
+            showSnack(getString(R.string.op_error));
+        } else {
+            Haptics.success(this);
         }
     }
 
