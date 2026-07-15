@@ -72,9 +72,10 @@ public final class AideParser {
     private static List<String> JArrayToList(JSONArray array){
 
 
-        List<String> list = new ArrayList<String>();
+        int len = array.length();
+        List<String> list = new ArrayList<String>(len);
 
-        for (int i=0; i<array.length(); i++){
+        for (int i=0; i<len; i++){
             try {
                 list.add(array.getString(i));
             } catch (JSONException e) {
