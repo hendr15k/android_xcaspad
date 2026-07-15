@@ -72,8 +72,6 @@ jobject
 createBitmap(JNIEnv* env, int width, int height, const char* format){
 
     jclass bitmapCls = env->FindClass("android/graphics/Bitmap");
-    jmethodID recycleFunction = env->GetMethodID(bitmapCls, "recycle", "()V");
-    env->CallObjectMethod(bitmapCls, recycleFunction);
     jmethodID createBitmapFunction = env->GetStaticMethodID(bitmapCls, "createBitmap", "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
     jstring configName = env->NewStringUTF(format);
     jclass bitmapConfigClass = env->FindClass("android/graphics/Bitmap$Config");
@@ -184,12 +182,12 @@ Java_org_giac_xcaspad_Calculator_getBitmap(JNIEnv* env, jobject thiz, jint windo
 
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
         LOGE("AndroidBitmap_getInfo() failed: error=%d", ret);
-        return;
+        return NULL;
     }
 
     if (info.format != ANDROID_BITMAP_FORMAT_RGB_565 && info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
         LOGE("Bitmap format is not RGB_565 or ARGB_8888");
-        return;
+        return NULL;
     }
 
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {

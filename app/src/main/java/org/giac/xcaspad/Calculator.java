@@ -56,7 +56,7 @@ public class Calculator {
 
     public static Bitmap getImageBytes(String input, double r, double g, double b) {
 
-        return getImageByMethod("array", input, r, g, b);
+        return getImageByMethod("bitmap", input, r, g, b);
 
     }
 
