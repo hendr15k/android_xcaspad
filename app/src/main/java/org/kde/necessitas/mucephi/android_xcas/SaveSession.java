@@ -18,15 +18,8 @@
 
 package org.kde.necessitas.mucephi.android_xcas;
 
-import android.app.DownloadManager;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Environment;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -35,7 +28,6 @@ import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.List;
 
@@ -43,12 +35,7 @@ import java.util.List;
  * Persists the user's session history to a {@code .cas} text file so
  * they can share or back it up.
  *
- * On Android 10+ (API 29) the write goes through
- * {@link MediaStore.Downloads#EXTERNAL_CONTENT_URI} which does not
- * require any runtime permission. Older Android versions fall back to
- * a direct {@link FileOutputStream} in the public Downloads directory
- * and then queue the file with the platform {@link DownloadManager} so
- * the system files app can display it.
+ * Saves the session in app-specific external or internal storage.
  */
 public class SaveSession {
 
@@ -60,117 +47,61 @@ public class SaveSession {
     }
 
     /**
-     * Persist the given operations to a {@code .cas} file in the public
-     * Downloads collection and surface the result via a Toast.
+     * Persist the given operations to a {@code .cas} file in the app-specific
+     * storage and surface the result via a Toast.
      *
      * @param context any context; only the application context is retained.
      * @param data    ordered list of operations to serialise.
      */
     public static void download(final Context context, final List<HolderOperation> data) {
         final Context appContext = context.getApplicationContext();
-        final String baseName = "session";
 
         try {
-            Uri target;
-            String displayName;
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                target = writeViaMediaStore(appContext, baseName, data);
-                displayName = baseName + FILE_EXTENSION;
-            } else {
-                File legacyFile = writeViaLegacyFile(appContext, data);
-                if (legacyFile == null) {
-                    Toast.makeText(appContext,
-                            appContext.getString(R.string.save_session_failed),
-                            Toast.LENGTH_LONG).show();
-                    return;
-                }
-                target = legacyToDownloadManager(appContext, legacyFile);
-                displayName = legacyFile.getName();
+            File path = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (path == null) {
+                path = appContext.getFilesDir();
             }
 
-            if (target == null) {
+            if (path == null) {
+                Log.e(LOG_TAG, "Storage directory unavailable");
                 Toast.makeText(appContext,
                         appContext.getString(R.string.save_session_failed),
                         Toast.LENGTH_LONG).show();
                 return;
             }
 
-            final String shownName = displayName;
+            if (!path.exists() && !path.mkdirs()) {
+                Log.e(LOG_TAG, "Could not create " + path);
+                Toast.makeText(appContext,
+                        appContext.getString(R.string.save_session_failed),
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            File file = uniqueFile(path);
+            FileOutputStream fOut = null;
+            OutputStreamWriter writer = null;
+            try {
+                fOut = new FileOutputStream(file);
+                writer = new OutputStreamWriter(fOut);
+                writeCasBody(writer, data);
+                writer.flush();
+                fOut.flush();
+            } finally {
+                closeQuietly(writer);
+                closeQuietly(fOut);
+            }
+
             Toast.makeText(appContext,
-                    appContext.getString(R.string.save_session_success, shownName),
+                    appContext.getString(R.string.save_session_success, file.getName()),
                     Toast.LENGTH_LONG).show();
 
-            Log.i(LOG_TAG, "Session saved as " + shownName);
-            openDownloads(appContext);
+            Log.i(LOG_TAG, "Session saved as " + file.getName());
         } catch (Exception e) {
             Log.e(LOG_TAG, "Failed to save session", e);
             Toast.makeText(appContext,
                     appContext.getString(R.string.save_session_failed) + ": " + e.getMessage(),
                     Toast.LENGTH_LONG).show();
-        }
-    }
-
-    @androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
-    private static Uri writeViaMediaStore(Context appContext, String baseName,
-                                          List<HolderOperation> data) throws IOException {
-        final ContentResolver resolver = appContext.getContentResolver();
-        final ContentValues values = new ContentValues();
-        values.put(MediaStore.Downloads.DISPLAY_NAME, baseName + FILE_EXTENSION);
-        values.put(MediaStore.Downloads.MIME_TYPE, MIME_TYPE);
-        values.put(MediaStore.Downloads.RELATIVE_PATH,
-                Environment.DIRECTORY_DOWNLOADS);
-
-        final Uri uri = resolver.insert(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-        if (uri == null) {
-            Log.e(LOG_TAG, "MediaStore.insert returned null");
-            return null;
-        }
-
-        OutputStream os = null;
-        OutputStreamWriter writer = null;
-        try {
-            os = resolver.openOutputStream(uri, "w");
-            if (os == null) {
-                return null;
-            }
-            writer = new OutputStreamWriter(os);
-            writeCasBody(writer, data);
-            writer.flush();
-            return uri;
-        } finally {
-            closeQuietly(writer);
-            closeQuietly(os);
-        }
-    }
-
-    private static File writeViaLegacyFile(Context appContext,
-                                           List<HolderOperation> data) throws IOException {
-        final File path = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS);
-        if (path == null) {
-            Log.e(LOG_TAG, "External Downloads directory unavailable");
-            return null;
-        }
-        if (!path.exists() && !path.mkdirs()) {
-            Log.e(LOG_TAG, "Could not create " + path);
-            return null;
-        }
-
-        File file = uniqueFile(path);
-        FileOutputStream fOut = null;
-        OutputStreamWriter writer = null;
-        try {
-            fOut = new FileOutputStream(file);
-            writer = new OutputStreamWriter(fOut);
-            writeCasBody(writer, data);
-            writer.flush();
-            fOut.flush();
-            return file;
-        } finally {
-            closeQuietly(writer);
-            closeQuietly(fOut);
         }
     }
 
@@ -191,26 +122,6 @@ public class SaveSession {
             writer.append("\n");
             writer.append(op.getStrOutput());
             writer.append("\n");
-        }
-    }
-
-    private static Uri legacyToDownloadManager(Context appContext, File file) {
-        DownloadManager dm = (DownloadManager) appContext.getSystemService(
-                Context.DOWNLOAD_SERVICE);
-        if (dm == null) {
-            return Uri.fromFile(file);
-        }
-        dm.addCompletedDownload(file.getName(), "Xcas Pad", true, MIME_TYPE,
-                file.getAbsolutePath(), file.length(), true);
-        return Uri.fromFile(file);
-    }
-
-    private static void openDownloads(Context appContext) {
-        try {
-            Intent view = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
-            view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            appContext.startActivity(view);
-        } catch (Exception ignored) {
         }
     }
 
