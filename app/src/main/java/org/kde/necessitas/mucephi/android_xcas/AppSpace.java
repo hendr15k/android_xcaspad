@@ -20,8 +20,6 @@ package org.kde.necessitas.mucephi.android_xcas;
 
 import android.app.Application;
 
-import org.giac.xcaspad.Calculator;
-
 /**
  * Created by leonel on 24/11/17.
  */
