@@ -9,9 +9,6 @@
 #include "prettyprint.h"
 #include "fonts/helvetica_regular.h"
 
-//Horrible hack to center the image
-int HORRIBLE_FIX;
-
 typedef struct{
     unsigned char *current_position;
     unsigned char *end_of_array;
@@ -63,12 +60,10 @@ PrettyPrint::PrettyPrint(int windowsize, int fontsize, giac::gen gen):Equation()
     data = Equation_compute_size(gen, attr, windowsize, contextptr);
     eqwdata bounds = Equation_total_size(data);
 
-    HORRIBLE_FIX = fontsize;
-
-    width = bounds.dx + HORRIBLE_FIX;
-    height = bounds.dy + HORRIBLE_FIX;
-    rightx = bounds.x;
-    lowery = bounds.y;
+    width = bounds.dx + fontsize;
+    height = bounds.dy + fontsize;
+    viewport_x = bounds.x - fontsize / 2;
+    viewport_y = bounds.y + bounds.dy + fontsize / 2;
 
     cairo_destroy(cairo);
     cairo_surface_destroy(cs);
@@ -86,7 +81,7 @@ void PrettyPrint::draw(cairo_surface_t *cs, double r, double g, double b){
 
     cairo_set_source_rgb(cairo, r, g, b);
 
-    Equation_draw(data, rightx, lowery + height - HORRIBLE_FIX/2, width, -height-HORRIBLE_FIX, this);
+    Equation_draw(data, viewport_x, viewport_y, viewport_x + width, viewport_y - height, this);
 
     cairo_destroy(cairo);
     cairo_surface_destroy(cs);
@@ -104,7 +99,7 @@ void PrettyPrint::draw(cairo_surface_t *cs, unsigned char** png_array,int *lengh
 
     cairo_set_source_rgb(cairo, r, g, b);
 
-    Equation_draw(data, rightx, lowery + height - HORRIBLE_FIX/2, width, -height-HORRIBLE_FIX, this);
+    Equation_draw(data, viewport_x, viewport_y, viewport_x + width, viewport_y - height, this);
 
     int image_size = this->getWidth() * this->getWidth();
     *png_array = (unsigned char *)malloc(image_size);

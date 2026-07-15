@@ -32,8 +32,8 @@ private:
 
     int width;
     int height;
-    int rightx;
-    int lowery;
+    int viewport_x;
+    int viewport_y;
 
     giac::attributs attr;
 
