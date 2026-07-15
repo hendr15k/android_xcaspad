@@ -29,8 +29,6 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import org.kde.necessitas.mucephi.android_xcas.aidehelp.AideParser;
-
 import java.util.LinkedList;
 
 public class SettingsActivity extends AppCompatActivity {
