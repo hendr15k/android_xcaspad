@@ -486,6 +486,22 @@ public class XcasPadActivity extends AppCompatActivity
             if(requestWritePermission())
                 SaveSession.download(this, operations);
         }
+        else if (id == R.id.action_share_session){
+            if (operations == null || operations.isEmpty()) {
+                showSnack(getString(R.string.share_session_empty));
+            } else {
+                SessionShareHelper.share(this, operations);
+                showSnack(getString(R.string.share_session_title));
+            }
+        }
+        else if (id == R.id.action_export_latex){
+            if (operations == null || operations.isEmpty()) {
+                showSnack(getString(R.string.export_latex_empty));
+            } else {
+                LatexExportHelper.share(this, operations);
+                showSnack(getString(R.string.export_latex_title));
+            }
+        }
         else if(id == R.id.action_clear_session){
             operations.clear();
             mAdapter.notifyDataSetChanged();

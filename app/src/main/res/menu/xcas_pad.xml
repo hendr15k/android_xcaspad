@@ -19,6 +19,16 @@
         app:showAsAction="never"
         android:title="Save sesssion" />
     <item
+        android:id="@+id/action_share_session"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        android:title="@string/action_share_session" />
+    <item
+        android:id="@+id/action_export_latex"
+        android:orderInCategory="100"
+        app:showAsAction="never"
+        android:title="@string/action_export_latex" />
+    <item
         android:id="@+id/action_clear_session"
         android:orderInCategory="100"
         app:showAsAction="never"

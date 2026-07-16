@@ -3,6 +3,9 @@
     <cache-path
         name="shared_images"
         path="shared/" />
+    <cache-path
+        name="shared_session"
+        path="shared/" />
     <external-cache-path
         name="external_shared_images"
         path="shared/" />
