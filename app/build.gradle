@@ -17,7 +17,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 34
         versionCode 19
-        versionName "v1.1.0-session-share-latex-export"
+        versionName "v1.10.0-session-share-latex-export"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
