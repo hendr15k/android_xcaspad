@@ -17,8 +17,20 @@ import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation
 
 public class Calculator {
 
+    private static volatile boolean nativeLibraryAvailable = false;
+
     static {
-        System.loadLibrary("xcaspad");
+        try {
+            System.loadLibrary("xcaspad");
+            nativeLibraryAvailable = true;
+        } catch (UnsatisfiedLinkError e) {
+            nativeLibraryAvailable = false;
+            System.err.println("Calculator: native library not available: " + e.getMessage());
+        }
+    }
+
+    public static boolean isNativeLibraryAvailable() {
+        return nativeLibraryAvailable;
     }
 
     /*this function retrieve the computed result from an math expression*/
@@ -36,6 +48,12 @@ public class Calculator {
     public static HolderOperation prettyPrint(String input){
 
         HolderOperation operation = new HolderOperation();
+        operation.setStrInput(input);
+
+        if (!nativeLibraryAvailable) {
+            operation.setStrOutput("Native library not available on this device architecture");
+            return operation;
+        }
 
         try{
 
@@ -47,8 +65,13 @@ public class Calculator {
             operation.setBmpInput(getImageBytes(input, 0.169, 0.282, 0.498));
             operation.setBmpOutput(getImageBytes(result, 0.204, 0.369, 0.047));
         }
+        catch (UnsatisfiedLinkError ule) {
+            nativeLibraryAvailable = false;
+            operation.setStrOutput("Native library not available on this device architecture");
+        }
         catch (Exception ex){
             ex.printStackTrace();
+            operation.setStrOutput("");
         }
 
         return operation;

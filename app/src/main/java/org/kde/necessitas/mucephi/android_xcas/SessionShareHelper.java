@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -57,7 +56,7 @@ public final class SessionShareHelper {
         OutputStreamWriter writer = null;
         try {
             fos = new FileOutputStream(outFile);
-            writer = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+            writer = new OutputStreamWriter(fos, "UTF-8");
             writeMarkdownBody(writer, data);
             writer.flush();
             fos.flush();
