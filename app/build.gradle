@@ -16,8 +16,8 @@ android {
         applicationId "org.kde.necessitas.mucephi.android_xcas"
         minSdkVersion 15
         targetSdkVersion 34
-        versionCode 18
-        versionName "cairo_render+history+autosave+bookmarks+darkmode+share+autocomplete+mediastore_savesession"
+        versionCode 19
+        versionName "v1.1.0-session-share-latex-export"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
