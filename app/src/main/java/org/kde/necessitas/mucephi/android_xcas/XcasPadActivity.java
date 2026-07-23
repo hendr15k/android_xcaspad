@@ -258,6 +258,8 @@ public class XcasPadActivity extends AppCompatActivity
                 return false;
             }
         });
+
+        checkForUpdates(false);
     }
 
     private void evaluateCurrentInput() {
@@ -507,6 +509,9 @@ public class XcasPadActivity extends AppCompatActivity
             mAdapter.notifyDataSetChanged();
             SessionPersistence.get(this).clear();
         }
+        else if(id == R.id.action_check_update){
+            checkForUpdates(true);
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -607,6 +612,60 @@ public class XcasPadActivity extends AppCompatActivity
                 return;
             }
         }
+    }
+
+    private void checkForUpdates(final boolean showFeedback) {
+        String currentVersion;
+        try {
+            currentVersion = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            currentVersion = "0.0.0";
+        }
+
+        UpdateChecker.checkForUpdate(this, currentVersion, new UpdateChecker.UpdateCallback() {
+            @Override
+            public void onUpdateAvailable(String versionName, String releaseNotes, final String apkUrl) {
+                String currentVer;
+                try {
+                    currentVer = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                } catch (Exception e) {
+                    currentVer = "?";
+                }
+
+                String message = getString(R.string.update_available_message, versionName, currentVer, releaseNotes);
+                if (message.length() > 500) {
+                    message = message.substring(0, 500) + "…";
+                }
+
+                new AlertDialog.Builder(XcasPadActivity.this)
+                        .setTitle(R.string.update_available_title)
+                        .setMessage(message)
+                        .setPositiveButton(R.string.update_download, new android.content.DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(android.content.DialogInterface dialog, int which) {
+                                showSnack(getString(R.string.update_downloading));
+                                long downloadId = UpdateChecker.downloadApk(XcasPadActivity.this, apkUrl);
+                                UpdateChecker.installOnDownloadComplete(XcasPadActivity.this, downloadId);
+                            }
+                        })
+                        .setNegativeButton(R.string.update_later, null)
+                        .show();
+            }
+
+            @Override
+            public void onNoUpdate() {
+                if (showFeedback) {
+                    showSnack(getString(R.string.update_up_to_date));
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                if (showFeedback) {
+                    showSnack(getString(R.string.update_check_failed));
+                }
+            }
+        });
     }
 
     private void showMessage(String message){

@@ -16,8 +16,8 @@ android {
         applicationId "org.kde.necessitas.mucephi.android_xcas"
         minSdkVersion 15
         targetSdkVersion 36
-        versionCode 21
-        versionName "v1.10.2-theme-crashfix"
+        versionCode 22
+        versionName "1.17.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

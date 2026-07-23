@@ -33,4 +33,9 @@
         android:orderInCategory="100"
         app:showAsAction="never"
         android:title="Clear screen" />
+    <item
+        android:id="@+id/action_check_update"
+        android:orderInCategory="110"
+        app:showAsAction="never"
+        android:title="@string/action_check_update" />
 </menu>
