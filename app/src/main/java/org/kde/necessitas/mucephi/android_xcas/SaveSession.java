@@ -118,9 +118,11 @@ public class SaveSession {
     private static void writeCasBody(OutputStreamWriter writer,
                                      List<HolderOperation> data) throws IOException {
         for (HolderOperation op : data) {
-            writer.append(op.getStrInput());
+            String input = op.getStrInput();
+            String output = op.getStrOutput();
+            writer.append(input != null ? input : "");
             writer.append("\n");
-            writer.append(op.getStrOutput());
+            writer.append(output != null ? output : "");
             writer.append("\n");
         }
     }

@@ -90,11 +90,17 @@ public class Calculator {
 
         if(method.equals("base64")){
             String encodedImage = getImageBase64(9000, fontSize, r, g, b, input);
+            if (encodedImage == null) {
+                return null;
+            }
             byte[] decodedString = Base64.decode(encodedImage, Base64.DEFAULT);
             bitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
         }
         else if(method.equals("array")) {
             byte[]  raw_bytes = getImageBytes(9000, fontSize, r, g, b, input);
+            if (raw_bytes == null) {
+                return null;
+            }
             bitmap = BitmapFactory.decodeByteArray(raw_bytes, 0, raw_bytes.length);
         }
         else if(method.equals("bitmap")) {

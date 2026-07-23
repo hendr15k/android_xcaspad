@@ -90,14 +90,20 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
         holder.imgInput.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                inputListener.onInputClick(mDataset.get(position).getStrInput());
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onInputClick(mDataset.get(pos).getStrInput());
+                }
             }
         });
 
         holder.imgOutput.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                inputListener.onOutputClick(mDataset.get(position).getStrOutput());
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onOutputClick(mDataset.get(pos).getStrOutput());
+                }
             }
         });
 
@@ -108,7 +114,10 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
 
             @Override
             public boolean onLongClick(View v) {
-                inputListener.onInputLongClick(v, position);
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onInputLongClick(v, pos);
+                }
                 return true;
             }
         });
@@ -116,7 +125,10 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
         holder.imgOutput.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                inputListener.onOutputLongClick(v, position);
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onOutputLongClick(v, pos);
+                }
                 return true;
             }
         });

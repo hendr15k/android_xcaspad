@@ -48,6 +48,10 @@ public class TouchCallback extends ItemTouchHelper.Callback{
         int fromPosition = viewHolder.getAdapterPosition();
         int toPosition = target.getAdapterPosition();
 
+        if (fromPosition == RecyclerView.NO_POSITION || toPosition == RecyclerView.NO_POSITION) {
+            return false;
+        }
+
         if (fromPosition < toPosition) {
             for (int i = fromPosition; i < toPosition; i++) {
                 mAdapter.swap(i, i + 1);
@@ -65,6 +69,9 @@ public class TouchCallback extends ItemTouchHelper.Callback{
     @Override
     public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
         int pos = viewHolder.getAdapterPosition();
+        if (pos == RecyclerView.NO_POSITION) {
+            return;
+        }
         HolderOperation removed = mAdapter.remove(pos);
         if (onRemove != null) {
             onRemove.onItemRemoved(pos, removed);

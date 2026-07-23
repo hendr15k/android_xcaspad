@@ -11,11 +11,11 @@ android {
         unitTests.returnDefaultValues = true
     }
     namespace "org.kde.necessitas.mucephi.android_xcas"
-    compileSdkVersion 34
+    compileSdkVersion 36
     defaultConfig {
         applicationId "org.kde.necessitas.mucephi.android_xcas"
         minSdkVersion 15
-        targetSdkVersion 34
+        targetSdkVersion 36
         versionCode 21
         versionName "v1.10.2-theme-crashfix"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -48,7 +48,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
         abortOnError false
     }

@@ -30,7 +30,7 @@
 #include "cpp-base64/base64.h"
 
 #define LOG_TAG ("JNI XcasPad")
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,  LOG_TAG, ))
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO,  LOG_TAG, __VA_ARGS__))
 #define LOGD(...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__))
 #define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN,  LOG_TAG, __VA_ARGS__))
 #define LOGE(...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__))
@@ -63,7 +63,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM * vm, void * reserved){
 
         LOGD("Init JNI Xcas Pad");
 
-        giac::context * contextptr = &giac_context;
+        contextptr = &giac_context;
 
         return JNI_VERSION_1_6;
 }
@@ -91,12 +91,13 @@ Java_org_giac_xcaspad_Calculator_executeOperation(JNIEnv* env, jobject thiz, jst
 
         g = eval(g, contextptr);
 
+        env->ReleaseStringUTFChars(operation, compute);
         return env->NewStringUTF(g.print().c_str());
     }
     catch (std::runtime_error & err){
-        //std::string error = std::string("Error:") + std::string(err.what());
-        //return env->NewStringUTF(error.c_str());
+        env->ReleaseStringUTFChars(operation, compute);
         env->ThrowNew(env->FindClass("java/lang/Exception"), err.what());
+        return NULL;
     }
 }
 
@@ -106,6 +107,8 @@ Java_org_giac_xcaspad_Calculator_getImageBytes(JNIEnv* env, jobject thiz, jint w
     const char *compute = env->GetStringUTFChars(operation, 0);
 
     giac::gen gen(compute, contextptr);
+
+    env->ReleaseStringUTFChars(operation, compute);
 
     xcas::PrettyPrint prettyprint((int)windowsize, (int)fontsize, gen);
 
@@ -125,10 +128,13 @@ Java_org_giac_xcaspad_Calculator_getImageBytes(JNIEnv* env, jobject thiz, jint w
         env->SetByteArrayRegion(array, 0, lenght, reinterpret_cast<jbyte*>(png_array));
         free(png_array);
 
+        cairo_surface_destroy(cs);
         return array;
 
     }catch (std::runtime_error & err){
+        cairo_surface_destroy(cs);
         env->ThrowNew(env->FindClass("java/lang/Exception"), err.what());
+        return NULL;
     }
 }
 
@@ -138,6 +144,8 @@ Java_org_giac_xcaspad_Calculator_getImageBase64(JNIEnv* env, jobject thiz, jint 
     const char *compute = env->GetStringUTFChars(operation, 0);
 
     giac::gen gen(compute, contextptr);
+
+    env->ReleaseStringUTFChars(operation, compute);
 
     xcas::PrettyPrint prettyprint((int)windowsize, (int)fontsize, gen);
 
@@ -154,11 +162,15 @@ Java_org_giac_xcaspad_Calculator_getImageBase64(JNIEnv* env, jobject thiz, jint 
         prettyprint.draw(cs, &png_array, &lenght, (double)r, (double)g, (double)b);
 
         std::string base64 = base64_encode(png_array, lenght);
+        free(png_array);
 
+        cairo_surface_destroy(cs);
         return env->NewStringUTF(base64.c_str());
 
     }catch (std::runtime_error & err){
+        cairo_surface_destroy(cs);
         env->ThrowNew(env->FindClass("java/lang/Exception"), err.what());
+        return NULL;
     }
 }
 
@@ -172,6 +184,8 @@ Java_org_giac_xcaspad_Calculator_getBitmap(JNIEnv* env, jobject thiz, jint windo
     const char *compute = env->GetStringUTFChars(operation, 0);
 
     giac::gen gen(compute, contextptr);
+
+    env->ReleaseStringUTFChars(operation, compute);
 
     xcas::PrettyPrint prettyprint((int)windowsize, (int)fontsize, gen);
 

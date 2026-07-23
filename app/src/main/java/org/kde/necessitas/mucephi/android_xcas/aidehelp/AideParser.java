@@ -50,17 +50,21 @@ public final class AideParser {
                 InputStreamReader inputreader = new InputStreamReader(instream);
                 BufferedReader buffreader = new BufferedReader(inputreader);
 
-                String line;
+                try {
+                    String line;
 
-                while ((line = buffreader.readLine()) != null){
-                    JSONObject function = new JSONObject(line);
-                    function.put("describe", function.getJSONObject("langs").getString(index_lang_help));
-                    function.put("related", JArrayToList(function.getJSONArray("related")));
-                    function.put("examples", JArrayToList(function.getJSONArray("examples")));
-                    mDataset.add(function);
+                    while ((line = buffreader.readLine()) != null){
+                        JSONObject function = new JSONObject(line);
+                        function.put("describe", function.getJSONObject("langs").getString(index_lang_help));
+                        function.put("related", JArrayToList(function.getJSONArray("related")));
+                        function.put("examples", JArrayToList(function.getJSONArray("examples")));
+                        mDataset.add(function);
+                    }
+                } finally {
+                    buffreader.close();
+                    inputreader.close();
+                    instream.close();
                 }
-
-                instream.close();
             }
         } catch (Exception ex) {
             ex.printStackTrace();

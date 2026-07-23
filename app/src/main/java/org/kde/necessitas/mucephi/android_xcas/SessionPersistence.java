@@ -27,6 +27,7 @@ import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation
 
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +66,9 @@ public final class SessionPersistence {
     /**
      * Snapshot of a single entry, suitable for serialization.
      */
-    public static class Entry {
+    public static class Entry implements Serializable {
+        private static final long serialVersionUID = 1L;
+
         public String input;
         public String output;
         public byte[] bitmap;

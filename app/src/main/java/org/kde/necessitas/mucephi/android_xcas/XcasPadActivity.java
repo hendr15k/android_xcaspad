@@ -400,7 +400,9 @@ public class XcasPadActivity extends AppCompatActivity
             }
             operations.add(op);
         }
-        mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
+        if (mAdapter.getItemCount() > 0) {
+            mRecyclerView.scrollToPosition(mAdapter.getItemCount() - 1);
+        }
     }
 
 
@@ -555,13 +557,14 @@ public class XcasPadActivity extends AppCompatActivity
         super.onActivityResult(requestCode, resultCode, data);
 
         if(requestCode == ACTIVITY_HELP){
-            if(resultCode == RESULT_OK){
+            if(resultCode == RESULT_OK && data != null){
                 ((EditText)findViewById(R.id.txt_input)).setText(data.getStringExtra("function"));
             }
         }
         else if(requestCode == ACTIVITY_SETTINGS){
-            if(resultCode == RESULT_OK){
-                if(data.getStringExtra("changed").equals("lang")){
+            if(resultCode == RESULT_OK && data != null){
+                String changed = data.getStringExtra("changed");
+                if("lang".equals(changed)){
                     AideParser.reset();
                 }
             }
