@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.util.Base64;
 
 import org.kde.necessitas.mucephi.android_xcas.AppSpace;
+import org.kde.necessitas.mucephi.android_xcas.PlotRenderer;
 import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation;
 
 /**
@@ -63,7 +64,15 @@ public class Calculator {
             operation.setStrOutput(result);
 
             operation.setBmpInput(getImageBytes(input, 0.169, 0.282, 0.498));
-            operation.setBmpOutput(getImageBytes(result, 0.204, 0.369, 0.047));
+
+            if (PlotRenderer.isPlotResult(result)) {
+                int fontSize = getFontSize();
+                int plotWidth = (int) (AppSpace.density * 320);
+                int plotHeight = (int) (AppSpace.density * 240);
+                operation.setBmpOutput(PlotRenderer.renderPlot(result, plotWidth, plotHeight));
+            } else {
+                operation.setBmpOutput(getImageBytes(result, 0.204, 0.369, 0.047));
+            }
         }
         catch (UnsatisfiedLinkError ule) {
             nativeLibraryAvailable = false;
