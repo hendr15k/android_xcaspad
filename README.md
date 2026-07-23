@@ -1,35 +1,76 @@
-# Xcas Pad
-### Computer algebra system source code project for Android
+# Xcas Pad (Revived)
 
-Get it at [Google play](https://play.google.com/store/apps/details?id=org.kde.necessitas.mucephi.android_xcas)
+### A Computer Algebra System for Android — brought back to life
 
-As maths kernel, Xcas Pad embed a port of the Giac/Xcas library.
-Giac/Xcas library is a powerful maths kernel used by many platforms, like the Hewlett Packard HP Prime calculator. 
-Also users of the Texas Instruments calculators(TI89, Voyage 200, TI Nspire) could find very familiar the CAS.
+This is a **maintained fork** of the original [Xcas Pad](https://github.com/xcaspad/android_xcaspad) app by Leonel Hernández Sandoval, which was last updated around 2018 and had accumulated numerous crashes and compatibility issues on modern Android devices.
 
-Thanks to Bernard Parisse for write and share [Giac library](http://www-fourier.ujf-grenoble.fr/~parisse/giac.html)
+This fork picks up where the original left off: fixing critical bugs, restoring removed features, and upgrading the app to run on current Android versions (up to Android 16 / API 36).
 
-## How to build
+## What's new in this fork
 
-* Firs of All download and setup [Android Studio](https://developer.android.com/studio/) to build the Apk.
-* Download and setup Android NDK Revision 10e (only this ndk revision are supported to build it)
+- **Android 16 support** — upgraded to compileSdk/targetSdk 36, AGP 8.7.3, Gradle 8.10.2
+- **Function plotting restored** — `plot(sin(x))`, `plot(x^2, x, -3, 3)` etc. render actual graphs again (was disabled in the original)
+- **Critical crash fixes** — JNI memory leaks, null pointer exceptions, ClassNotFoundException on Material Components, stale RecyclerView positions
+- **Session persistence** — save and restore calculator sessions
+- **LaTeX export & Markdown sharing**
+- **Haptic feedback** on operations
+
+## Features
+
+- Full Giac/Xcas CAS engine (same kernel as the HP Prime calculator)
+- 2D pretty-printed math output rendered as images
+- Function plotting with axes and grid
+- Symbolic computation: simplify, factor, solve, integrate, differentiate, limits, series
+- Numeric computation: matrices, linear algebra, statistics
+- Programming: loops, functions, sequences
+- Autocomplete for 400+ CAS commands
+- Session history with bookmarks
+
+## Screenshots
+
+| Calculator | Plot |
+|---|---|
+| Pretty-printed CAS output | Function graphs with axes |
+
+## Requirements
+
+- Android 4.0.3+ (minSdk 15)
+- ARM (armeabi, armeabi-v7a)
+
+## Building from source
+
+### Prerequisites
+
+- Android Studio (latest)
+- Android SDK with API 36
+- Java 17
+
+### Build the APK
 
 ```console
-foo@bar:~$ wget https://dl.google.com/android/repository/android-ndk-r10e-linux-x86_64.zip
-foo@bar:~$ unzip android-ndk-r10e-linux-x86_64.zip -d android-ndk-r10
+git clone https://github.com/hendr15k/android_xcaspad.git
+cd android_xcaspad
+./gradlew assembleRelease
 ```
 
-* Download giac sorce code and compile JNI libs
+The pre-built native library (`libxcaspad.so`) is included in `libs/`, so no NDK is required for a standard build.
 
-```console
-foo@bar:~$ mkdir build_xcas_pad && cd build_xcas_pad
-foo@bar:~$ wget https://www-fourier.ujf-grenoble.fr/~parisse/debian/dists/stable/main/source/giac_1.4.9-1.tar.gz
-foo@bar:~$ tar -xvf giac_1.4.9-1.tar.gz
-foo@bar:~$ cd giac-1.4.9
-foo@bar:~$ cp src/config.h.android src/config.h
-foo@bar:~$ git clone https://github.com/xcaspad/android_xcaspad.git
-foo@bar:~$ cd android_xcaspad/jni/
-foo@bar:~$ ~/android-ndk-r10/android-ndk-r10e/ndk-build
-```
+### Rebuilding the native library (optional)
 
-* Once again JNI libs(armeabi-v7a, x86) are compiled we can procced to open the Android Studio project and build the Apk.  
+Only needed if you modify the JNI/C++ code:
+
+1. Download Android NDK r10e
+2. Download Giac source (1.4.9+) and place it alongside this project
+3. Run `ndk-build` from the `jni/` directory
+
+See the [original build instructions](https://github.com/xcaspad/android_xcaspad) for details.
+
+## Credits
+
+- **Bernard Parisse** — [Giac/Xcas](https://www-fourier.ujf-grenoble.fr/~parisse/giac.html) CAS engine
+- **Leonel Hernández Sandoval** — original Xcas Pad Android app
+- This fork — bug fixes, feature restoration, modern Android support
+
+## License
+
+GPL v3
