@@ -66,10 +66,10 @@ public class Calculator {
             operation.setBmpInput(getImageBytes(input, 0.169, 0.282, 0.498));
 
             if (PlotRenderer.isPlotResult(result)) {
-                int fontSize = getFontSize();
-                int plotWidth = (int) (AppSpace.density * 320);
-                int plotHeight = (int) (AppSpace.density * 240);
+                int plotWidth = (int) (AppSpace.density * 360);
+                int plotHeight = (int) (AppSpace.density * 270);
                 operation.setBmpOutput(PlotRenderer.renderPlot(result, plotWidth, plotHeight));
+                operation.setStrOutput(input);
             } else {
                 operation.setBmpOutput(getImageBytes(result, 0.204, 0.369, 0.047));
             }
