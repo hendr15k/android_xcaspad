@@ -122,6 +122,8 @@ public class Plot3DRenderer {
                 projected[i][1] = height / 2f - (rawProj[i][1] - projCY) * fitScale;
             }
 
+            double[][] vertexNormals = computeVertexNormals(points, valid, rows, cols);
+
             drawFloorGrid(canvas, minX, maxX, minY, maxY, minZ,
                     cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX,
                     projCX, projCY, fitScale, width, height);
@@ -161,6 +163,24 @@ public class Plot3DRenderer {
                 }
             });
 
+            double keyLightX = -0.35, keyLightY = -0.55, keyLightZ = 0.75;
+            double keyLen = Math.sqrt(keyLightX * keyLightX + keyLightY * keyLightY + keyLightZ * keyLightZ);
+            keyLightX /= keyLen;
+            keyLightY /= keyLen;
+            keyLightZ /= keyLen;
+
+            double fillLightX = 0.5, fillLightY = -0.3, fillLightZ = 0.4;
+            double fillLen = Math.sqrt(fillLightX * fillLightX + fillLightY * fillLightY + fillLightZ * fillLightZ);
+            fillLightX /= fillLen;
+            fillLightY /= fillLen;
+            fillLightZ /= fillLen;
+
+            double viewX = 0, viewY = -1, viewZ = 0.5;
+            double viewLen = Math.sqrt(viewX * viewX + viewY * viewY + viewZ * viewZ);
+            viewX /= viewLen;
+            viewY /= viewLen;
+            viewZ /= viewLen;
+
             Paint quadPaint = new Paint();
             quadPaint.setStyle(Paint.Style.FILL);
             quadPaint.setAntiAlias(true);
@@ -170,17 +190,8 @@ public class Plot3DRenderer {
             wirePaint.setStrokeWidth(0.3f);
             wirePaint.setAntiAlias(true);
 
-            double lightX = -0.35, lightY = -0.55, lightZ = 0.75;
-            double lightLen = Math.sqrt(lightX * lightX + lightY * lightY + lightZ * lightZ);
-            lightX /= lightLen;
-            lightY /= lightLen;
-            lightZ /= lightLen;
-
-            double viewX = 0, viewY = -1, viewZ = 0.5;
-            double viewLen = Math.sqrt(viewX * viewX + viewY * viewY + viewZ * viewZ);
-            viewX /= viewLen;
-            viewY /= viewLen;
-            viewZ /= viewLen;
+            double numContours = 8;
+            double contourInterval = rangeZ / numContours;
 
             for (int[] quad : quads) {
                 double[] p0 = points.get(quad[0]);
@@ -202,9 +213,10 @@ public class Plot3DRenderer {
                 double viewDot = nx * viewX + ny * viewY + nz * viewZ;
                 if (viewDot < -0.15) continue;
 
-                double diffuse = Math.abs(nx * lightX + ny * lightY + nz * lightZ);
+                double keyDiffuse = Math.abs(nx * keyLightX + ny * keyLightY + nz * keyLightZ);
+                double fillDiffuse = Math.abs(nx * fillLightX + ny * fillLightY + nz * fillLightZ);
 
-                double hx = lightX + viewX, hy = lightY + viewY, hz = lightZ + viewZ;
+                double hx = keyLightX + viewX, hy = keyLightY + viewY, hz = keyLightZ + viewZ;
                 double hLen = Math.sqrt(hx * hx + hy * hy + hz * hz);
                 double specular = 0;
                 if (hLen > 1e-12) {
@@ -215,8 +227,8 @@ public class Plot3DRenderer {
                     specular = Math.pow(spec, 40) * 0.5;
                 }
 
-                double ambient = 0.28;
-                double intensity = ambient + 0.62 * diffuse + specular;
+                double ambient = 0.25;
+                double intensity = ambient + 0.50 * keyDiffuse + 0.18 * fillDiffuse + specular;
                 intensity = Math.max(0, Math.min(1.3, intensity));
 
                 double avgZ = (p0[2] + p1[2] + points.get(quad[2])[2] + p3[2]) / 4.0;
@@ -235,7 +247,7 @@ public class Plot3DRenderer {
                 }
 
                 quadPaint.setColor(Color.rgb(r, g, b));
-                wirePaint.setColor(Color.argb(45, 0, 0, 0));
+                wirePaint.setColor(Color.argb(40, 0, 0, 0));
 
                 Path path = new Path();
                 path.moveTo(projected[quad[0]][0], projected[quad[0]][1]);
@@ -248,6 +260,9 @@ public class Plot3DRenderer {
                 canvas.drawPath(path, wirePaint);
             }
 
+            drawContourLines(canvas, points, valid, rows, cols, projected, minZ, rangeZ, contourInterval, numContours);
+            drawSilhouetteEdges(canvas, points, valid, rows, cols, projected, viewX, viewY, viewZ);
+
             drawAxes(canvas, minX, maxX, minY, maxY, minZ, maxZ,
                     cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX,
                     projCX, projCY, fitScale, width, height);
@@ -259,6 +274,151 @@ public class Plot3DRenderer {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    private static double[][] computeVertexNormals(List<double[]> points, boolean[] valid, int rows, int cols) {
+        int n = points.size();
+        double[][] normals = new double[n][3];
+
+        for (int i = 0; i < rows - 1; i++) {
+            for (int j = 0; j < cols - 1; j++) {
+                int i0 = i * cols + j;
+                int i1 = i * cols + j + 1;
+                int i2 = (i + 1) * cols + j + 1;
+                int i3 = (i + 1) * cols + j;
+                if (i3 >= n) continue;
+                if (!valid[i0] || !valid[i1] || !valid[i2] || !valid[i3]) continue;
+
+                double[] p0 = points.get(i0);
+                double[] p1 = points.get(i1);
+                double[] p3 = points.get(i3);
+
+                double ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2];
+                double vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
+                double fx = uy * vz - uz * vy;
+                double fy = uz * vx - ux * vz;
+                double fz = ux * vy - uy * vx;
+
+                int[] verts = {i0, i1, i2, i3};
+                for (int v : verts) {
+                    normals[v][0] += fx;
+                    normals[v][1] += fy;
+                    normals[v][2] += fz;
+                }
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            double len = Math.sqrt(normals[i][0] * normals[i][0] + normals[i][1] * normals[i][1] + normals[i][2] * normals[i][2]);
+            if (len > 1e-12) {
+                normals[i][0] /= len;
+                normals[i][1] /= len;
+                normals[i][2] /= len;
+            } else {
+                normals[i][0] = 0;
+                normals[i][1] = 0;
+                normals[i][2] = 1;
+            }
+        }
+
+        return normals;
+    }
+
+    private static void drawContourLines(Canvas canvas, List<double[]> points, boolean[] valid,
+                                         int rows, int cols, float[][] projected,
+                                         double minZ, double rangeZ, double contourInterval, double numContours) {
+        if (contourInterval <= 0) return;
+
+        Paint contourPaint = new Paint();
+        contourPaint.setStyle(Paint.Style.STROKE);
+        contourPaint.setStrokeWidth(1.2f);
+        contourPaint.setAntiAlias(true);
+
+        for (int c = 1; c < (int) numContours; c++) {
+            double zLevel = minZ + c * contourInterval;
+            double t = c / numContours;
+            int[] rgb = colormap(t);
+            contourPaint.setColor(Color.argb(100, clamp(rgb[0] / 2), clamp(rgb[1] / 2), clamp(rgb[2] / 2)));
+
+            for (int i = 0; i < rows - 1; i++) {
+                for (int j = 0; j < cols - 1; j++) {
+                    int i0 = i * cols + j;
+                    int i1 = i * cols + j + 1;
+                    int i2 = (i + 1) * cols + j + 1;
+                    int i3 = (i + 1) * cols + j;
+                    if (i3 >= points.size()) continue;
+                    if (!valid[i0] || !valid[i1] || !valid[i2] || !valid[i3]) continue;
+
+                    drawContourSegment(canvas, points, projected, i0, i1, zLevel, contourPaint);
+                    drawContourSegment(canvas, points, projected, i1, i2, zLevel, contourPaint);
+                    drawContourSegment(canvas, points, projected, i2, i3, zLevel, contourPaint);
+                    drawContourSegment(canvas, points, projected, i3, i0, zLevel, contourPaint);
+                }
+            }
+        }
+    }
+
+    private static void drawContourSegment(Canvas canvas, List<double[]> points, float[][] projected,
+                                           int a, int b, double zLevel, Paint paint) {
+        double za = points.get(a)[2];
+        double zb = points.get(b)[2];
+
+        if ((za - zLevel) * (zb - zLevel) >= 0) return;
+
+        double t = (zLevel - za) / (zb - za);
+        if (t < 0 || t > 1) return;
+
+        float x = (float) (projected[a][0] + t * (projected[b][0] - projected[a][0]));
+        float y = (float) (projected[a][1] + t * (projected[b][1] - projected[a][1]));
+
+        canvas.drawPoint(x, y, paint);
+    }
+
+    private static void drawSilhouetteEdges(Canvas canvas, List<double[]> points, boolean[] valid,
+                                            int rows, int cols, float[][] projected,
+                                            double viewX, double viewY, double viewZ) {
+        Paint silPaint = new Paint();
+        silPaint.setColor(Color.argb(160, 30, 30, 50));
+        silPaint.setStyle(Paint.Style.STROKE);
+        silPaint.setStrokeWidth(1.8f);
+        silPaint.setAntiAlias(true);
+
+        for (int i = 0; i < rows - 1; i++) {
+            for (int j = 0; j < cols - 1; j++) {
+                int i0 = i * cols + j;
+                int i1 = i * cols + j + 1;
+                int i2 = (i + 1) * cols + j + 1;
+                int i3 = (i + 1) * cols + j;
+                if (i3 >= points.size()) continue;
+                if (!valid[i0] || !valid[i1] || !valid[i2] || !valid[i3]) continue;
+
+                double[] p0 = points.get(i0);
+                double[] p1 = points.get(i1);
+                double[] p3 = points.get(i3);
+
+                double ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2];
+                double vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
+                double nx = uy * vz - uz * vy;
+                double ny = uz * vx - ux * vz;
+                double nz = ux * vy - uy * vx;
+                double nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+                if (nLen < 1e-12) continue;
+                nx /= nLen;
+                ny /= nLen;
+                nz /= nLen;
+
+                double dot = nx * viewX + ny * viewY + nz * viewZ;
+                if (Math.abs(dot) < 0.12) {
+                    Path path = new Path();
+                    path.moveTo(projected[i0][0], projected[i0][1]);
+                    path.lineTo(projected[i1][0], projected[i1][1]);
+                    path.lineTo(projected[i2][0], projected[i2][1]);
+                    path.lineTo(projected[i3][0], projected[i3][1]);
+                    path.close();
+                    canvas.drawPath(path, silPaint);
+                }
+            }
         }
     }
 
@@ -313,6 +473,11 @@ public class Plot3DRenderer {
         gridPaint.setStrokeWidth(0.8f);
         gridPaint.setAntiAlias(true);
 
+        Paint gridLabelPaint = new Paint();
+        gridLabelPaint.setColor(Color.argb(120, 80, 80, 100));
+        gridLabelPaint.setTextSize(Math.max(8, height / 45f));
+        gridLabelPaint.setAntiAlias(true);
+
         int n = 6;
         for (int i = 0; i <= n; i++) {
             double frac = (double) i / n;
@@ -325,6 +490,9 @@ public class Plot3DRenderer {
             float[] c = projectToFit(new double[]{minX, yVal, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             float[] d = projectToFit(new double[]{maxX, yVal, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             canvas.drawLine(c[0], c[1], d[0], d[1], gridPaint);
+
+            canvas.drawText(formatTick(xVal), a[0] - 8, a[1] + 12, gridLabelPaint);
+            canvas.drawText(formatTick(yVal), c[0] - 24, c[1] + 10, gridLabelPaint);
         }
     }
 
