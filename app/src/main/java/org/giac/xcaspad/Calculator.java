@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.util.Base64;
 
 import org.kde.necessitas.mucephi.android_xcas.AppSpace;
+import org.kde.necessitas.mucephi.android_xcas.Plot3DRenderer;
 import org.kde.necessitas.mucephi.android_xcas.PlotRenderer;
 import org.kde.necessitas.mucephi.android_xcas.adapteroperations.HolderOperation;
 
@@ -65,7 +66,12 @@ public class Calculator {
 
             operation.setBmpInput(getImageBytes(input, 0.169, 0.282, 0.498));
 
-            if (PlotRenderer.isPlotResult(result)) {
+            if (Plot3DRenderer.is3DPlotResult(result)) {
+                int plotWidth = (int) (AppSpace.density * 360);
+                int plotHeight = (int) (AppSpace.density * 360);
+                operation.setBmpOutput(Plot3DRenderer.renderPlot3D(result, plotWidth, plotHeight));
+                operation.setStrOutput(input);
+            } else if (PlotRenderer.isPlotResult(result)) {
                 int plotWidth = (int) (AppSpace.density * 360);
                 int plotHeight = (int) (AppSpace.density * 270);
                 operation.setBmpOutput(PlotRenderer.renderPlot(result, plotWidth, plotHeight));
