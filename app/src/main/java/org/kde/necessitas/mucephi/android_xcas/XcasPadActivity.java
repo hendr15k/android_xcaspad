@@ -268,8 +268,6 @@ public class XcasPadActivity extends AppCompatActivity
         String input = txtInputOperation.getText().toString();
         if (input.equals("some_tests")) {
             performOperationsBatch(TestsOperations.operations);
-        } else if (input.contains("plot")) {
-            showMessage("Graphics are not longer supported by this version.");
         } else {
             performOperation(input);
             txtInputOperation.setText("");
