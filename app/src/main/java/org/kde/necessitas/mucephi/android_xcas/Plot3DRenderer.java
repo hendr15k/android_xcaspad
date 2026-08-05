@@ -24,17 +24,101 @@ public class Plot3DRenderer {
         return result.contains("hypersurface(group[");
     }
 
-    public static Bitmap renderPlot3D(String result, int width, int height) {
+    /**
+     * Parsed, view-independent representation of a 3D surface. The projection
+     * (which depends on the viewing angles and zoom) is computed per render.
+     */
+    public static class Plot3DData {
+        public final List<double[]> points = new ArrayList<>();
+        public boolean[] valid;
+        public int rows;
+        public int cols;
+        public double minX, maxX, minY, maxY, minZ, maxZ;
+        public double cx, cy, cz;
+        public double rangeX, rangeY, rangeZ;
+    }
+
+    /**
+     * Parses a Giac 3D surface result into view-independent data, or returns
+     * {@code null} if the result cannot be interpreted as a plottable surface.
+     */
+    public static Plot3DData parse(String result) {
         if (!is3DPlotResult(result)) return null;
 
-        try {
-            List<double[]> points = parsePoints3D(result);
-            if (points.isEmpty()) return null;
+        List<double[]> points = parsePoints3D(result);
+        if (points.isEmpty()) return null;
 
-            int[] grid = detectGrid(points);
-            int rows = grid[0];
-            int cols = grid[1];
-            if (rows < 2 || cols < 2) return null;
+        int[] grid = detectGrid(points);
+        int rows = grid[0];
+        int cols = grid[1];
+        if (rows < 2 || cols < 2) return null;
+
+        Plot3DData data = new Plot3DData();
+        data.points.addAll(points);
+        data.rows = rows;
+        data.cols = cols;
+        data.valid = new boolean[points.size()];
+
+        data.minX = Double.MAX_VALUE;
+        data.maxX = -Double.MAX_VALUE;
+        data.minY = Double.MAX_VALUE;
+        data.maxY = -Double.MAX_VALUE;
+        data.minZ = Double.MAX_VALUE;
+        data.maxZ = -Double.MAX_VALUE;
+
+        for (int i = 0; i < points.size(); i++) {
+            double[] p = points.get(i);
+            if (Double.isNaN(p[0]) || Double.isNaN(p[1]) || Double.isNaN(p[2]) ||
+                    Double.isInfinite(p[0]) || Double.isInfinite(p[1]) || Double.isInfinite(p[2])) {
+                data.valid[i] = false;
+                continue;
+            }
+            data.valid[i] = true;
+            data.minX = Math.min(data.minX, p[0]);
+            data.maxX = Math.max(data.maxX, p[0]);
+            data.minY = Math.min(data.minY, p[1]);
+            data.maxY = Math.max(data.maxY, p[1]);
+            data.minZ = Math.min(data.minZ, p[2]);
+            data.maxZ = Math.max(data.maxZ, p[2]);
+        }
+
+        if (data.minX == Double.MAX_VALUE) return null;
+
+        data.cx = (data.minX + data.maxX) / 2;
+        data.cy = (data.minY + data.maxY) / 2;
+        data.cz = (data.minZ + data.maxZ) / 2;
+        data.rangeX = data.maxX - data.minX;
+        data.rangeY = data.maxY - data.minY;
+        data.rangeZ = data.maxZ - data.minZ;
+        if (data.rangeX == 0) data.rangeX = 1;
+        if (data.rangeY == 0) data.rangeY = 1;
+        if (data.rangeZ == 0) data.rangeZ = 1;
+
+        return data;
+    }
+
+    /**
+     * Convenience renderer with a default viewing angle.
+     */
+    public static Bitmap renderPlot3D(String result, int width, int height) {
+        Plot3DData data = parse(result);
+        if (data == null) return null;
+        return render(data, width, height, 25f, 40f, 1f);
+    }
+
+    /**
+     * Renders the surface with the given elevation ({@code angleX}) and
+     * azimuth ({@code angleZ}) in degrees, scaled by {@code zoom}.
+     */
+    public static Bitmap render(Plot3DData data, int width, int height,
+                                float angleX, float angleZ, float zoom) {
+        if (data == null || width <= 0 || height <= 0) return null;
+
+        try {
+            List<double[]> points = data.points;
+            int rows = data.rows;
+            int cols = data.cols;
+            boolean[] valid = data.valid;
 
             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
@@ -44,55 +128,23 @@ public class Plot3DRenderer {
                     Color.rgb(250, 252, 255), Color.rgb(220, 228, 242), Shader.TileMode.CLAMP));
             canvas.drawRect(0, 0, width, height, bgPaint);
 
-            double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
-            double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-            double minZ = Double.MAX_VALUE, maxZ = -Double.MAX_VALUE;
+            double angleXr = Math.toRadians(angleX);
+            double angleZr = Math.toRadians(angleZ);
 
-            for (double[] p : points) {
-                if (Double.isNaN(p[0]) || Double.isNaN(p[1]) || Double.isNaN(p[2])) continue;
-                if (Double.isInfinite(p[0]) || Double.isInfinite(p[1]) || Double.isInfinite(p[2])) continue;
-                minX = Math.min(minX, p[0]);
-                maxX = Math.max(maxX, p[0]);
-                minY = Math.min(minY, p[1]);
-                maxY = Math.max(maxY, p[1]);
-                minZ = Math.min(minZ, p[2]);
-                maxZ = Math.max(maxZ, p[2]);
-            }
-
-            if (minX == Double.MAX_VALUE) return null;
-
-            double cx = (minX + maxX) / 2;
-            double cy = (minY + maxY) / 2;
-            double cz = (minZ + maxZ) / 2;
-            double rangeX = maxX - minX;
-            double rangeY = maxY - minY;
-            double rangeZ = maxZ - minZ;
-            if (rangeX == 0) rangeX = 1;
-            if (rangeY == 0) rangeY = 1;
-            if (rangeZ == 0) rangeZ = 1;
-
-            double angleX = Math.toRadians(25);
-            double angleZ = Math.toRadians(40);
-
-            double cosZ = Math.cos(angleZ), sinZ = Math.sin(angleZ);
-            double cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+            double cosZ = Math.cos(angleZr), sinZ = Math.sin(angleZr);
+            double cosX = Math.cos(angleXr), sinX = Math.sin(angleXr);
 
             float[][] rawProj = new float[points.size()][2];
             double[] depths = new double[points.size()];
-            boolean[] valid = new boolean[points.size()];
 
             float projMinX = Float.MAX_VALUE, projMaxX = -Float.MAX_VALUE;
             float projMinY = Float.MAX_VALUE, projMaxY = -Float.MAX_VALUE;
 
             for (int i = 0; i < points.size(); i++) {
+                if (!valid[i]) continue;
                 double[] p = points.get(i);
-                if (Double.isNaN(p[0]) || Double.isNaN(p[1]) || Double.isNaN(p[2]) ||
-                        Double.isInfinite(p[0]) || Double.isInfinite(p[1]) || Double.isInfinite(p[2])) {
-                    valid[i] = false;
-                    continue;
-                }
-                valid[i] = true;
-                double[] rot = rotatePoint(p, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX);
+                double[] rot = rotatePoint(p, data.cx, data.cy, data.cz,
+                        data.rangeX, data.rangeY, data.rangeZ, cosZ, sinZ, cosX, sinX);
                 rawProj[i][0] = (float) rot[0];
                 rawProj[i][1] = (float) rot[2];
                 depths[i] = rot[1];
@@ -111,6 +163,7 @@ public class Plot3DRenderer {
             float usableW = width * (1 - 2 * margin);
             float usableH = height * (1 - 2 * margin);
             float fitScale = Math.min(usableW / projRangeX, usableH / projRangeY);
+            fitScale *= zoom;
 
             float projCX = (projMinX + projMaxX) / 2f;
             float projCY = (projMinY + projMaxY) / 2f;
@@ -122,18 +175,12 @@ public class Plot3DRenderer {
                 projected[i][1] = height / 2f - (rawProj[i][1] - projCY) * fitScale;
             }
 
-            double[][] vertexNormals = computeVertexNormals(points, valid, rows, cols);
-
-            drawFloorGrid(canvas, minX, maxX, minY, maxY, minZ,
-                    cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX,
-                    projCX, projCY, fitScale, width, height);
-
-            drawFloorShadow(canvas, points, valid, rows, cols, minZ,
-                    cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX,
-                    projCX, projCY, fitScale, width, height);
+            drawFloorGrid(canvas, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            drawFloorShadow(canvas, points, valid, rows, cols, data.minZ,
+                    data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
 
             List<int[]> quads = new ArrayList<>();
-            double maxEdgeZ = rangeZ * 3.0;
+            double maxEdgeZ = data.rangeZ * 3.0;
             for (int i = 0; i < rows - 1; i++) {
                 for (int j = 0; j < cols - 1; j++) {
                     int i0 = i * cols + j;
@@ -191,7 +238,7 @@ public class Plot3DRenderer {
             wirePaint.setAntiAlias(true);
 
             double numContours = 8;
-            double contourInterval = rangeZ / numContours;
+            double contourInterval = data.rangeZ / numContours;
 
             for (int[] quad : quads) {
                 double[] p0 = points.get(quad[0]);
@@ -232,7 +279,7 @@ public class Plot3DRenderer {
                 intensity = Math.max(0, Math.min(1.3, intensity));
 
                 double avgZ = (p0[2] + p1[2] + points.get(quad[2])[2] + p3[2]) / 4.0;
-                double zNorm = (avgZ - minZ) / rangeZ;
+                double zNorm = (avgZ - data.minZ) / data.rangeZ;
 
                 int[] rgb = colormap(zNorm);
                 int r = clamp((int) (rgb[0] * intensity));
@@ -260,14 +307,13 @@ public class Plot3DRenderer {
                 canvas.drawPath(path, wirePaint);
             }
 
-            drawContourLines(canvas, points, valid, rows, cols, projected, minZ, rangeZ, contourInterval, numContours);
+            drawContourLines(canvas, points, valid, rows, cols, projected,
+                    data.minZ, data.rangeZ, contourInterval, numContours);
             drawSilhouetteEdges(canvas, points, valid, rows, cols, projected, viewX, viewY, viewZ);
 
-            drawAxes(canvas, minX, maxX, minY, maxY, minZ, maxZ,
-                    cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX,
-                    projCX, projCY, fitScale, width, height);
+            drawAxes(canvas, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
 
-            drawColorLegend(canvas, minZ, maxZ, width, height);
+            drawColorLegend(canvas, data.minZ, data.maxZ, width, height);
 
             return bitmap;
 
@@ -275,54 +321,6 @@ public class Plot3DRenderer {
             e.printStackTrace();
             return null;
         }
-    }
-
-    private static double[][] computeVertexNormals(List<double[]> points, boolean[] valid, int rows, int cols) {
-        int n = points.size();
-        double[][] normals = new double[n][3];
-
-        for (int i = 0; i < rows - 1; i++) {
-            for (int j = 0; j < cols - 1; j++) {
-                int i0 = i * cols + j;
-                int i1 = i * cols + j + 1;
-                int i2 = (i + 1) * cols + j + 1;
-                int i3 = (i + 1) * cols + j;
-                if (i3 >= n) continue;
-                if (!valid[i0] || !valid[i1] || !valid[i2] || !valid[i3]) continue;
-
-                double[] p0 = points.get(i0);
-                double[] p1 = points.get(i1);
-                double[] p3 = points.get(i3);
-
-                double ux = p1[0] - p0[0], uy = p1[1] - p0[1], uz = p1[2] - p0[2];
-                double vx = p3[0] - p0[0], vy = p3[1] - p0[1], vz = p3[2] - p0[2];
-                double fx = uy * vz - uz * vy;
-                double fy = uz * vx - ux * vz;
-                double fz = ux * vy - uy * vx;
-
-                int[] verts = {i0, i1, i2, i3};
-                for (int v : verts) {
-                    normals[v][0] += fx;
-                    normals[v][1] += fy;
-                    normals[v][2] += fz;
-                }
-            }
-        }
-
-        for (int i = 0; i < n; i++) {
-            double len = Math.sqrt(normals[i][0] * normals[i][0] + normals[i][1] * normals[i][1] + normals[i][2] * normals[i][2]);
-            if (len > 1e-12) {
-                normals[i][0] /= len;
-                normals[i][1] /= len;
-                normals[i][2] /= len;
-            } else {
-                normals[i][0] = 0;
-                normals[i][1] = 0;
-                normals[i][2] = 1;
-            }
-        }
-
-        return normals;
     }
 
     private static void drawContourLines(Canvas canvas, List<double[]> points, boolean[] valid,
@@ -350,29 +348,46 @@ public class Plot3DRenderer {
                     if (i3 >= points.size()) continue;
                     if (!valid[i0] || !valid[i1] || !valid[i2] || !valid[i3]) continue;
 
-                    drawContourSegment(canvas, points, projected, i0, i1, zLevel, contourPaint);
-                    drawContourSegment(canvas, points, projected, i1, i2, zLevel, contourPaint);
-                    drawContourSegment(canvas, points, projected, i2, i3, zLevel, contourPaint);
-                    drawContourSegment(canvas, points, projected, i3, i0, zLevel, contourPaint);
+                    drawContourQuad(canvas, points, projected, i0, i1, i2, i3, zLevel, contourPaint);
                 }
             }
         }
     }
 
-    private static void drawContourSegment(Canvas canvas, List<double[]> points, float[][] projected,
-                                           int a, int b, double zLevel, Paint paint) {
+    private static void drawContourQuad(Canvas canvas, List<double[]> points, float[][] projected,
+                                        int i0, int i1, int i2, int i3,
+                                        double zLevel, Paint paint) {
+        float[] c0 = crossing(points, projected, i0, i1, zLevel);
+        float[] c1 = crossing(points, projected, i1, i2, zLevel);
+        float[] c2 = crossing(points, projected, i2, i3, zLevel);
+        float[] c3 = crossing(points, projected, i3, i0, zLevel);
+
+        List<float[]> pts = new ArrayList<>();
+        if (c0 != null) pts.add(c0);
+        if (c1 != null) pts.add(c1);
+        if (c2 != null) pts.add(c2);
+        if (c3 != null) pts.add(c3);
+
+        for (int k = 0; k + 1 < pts.size(); k += 2) {
+            float[] a = pts.get(k);
+            float[] b = pts.get(k + 1);
+            canvas.drawLine(a[0], a[1], b[0], b[1], paint);
+        }
+    }
+
+    private static float[] crossing(List<double[]> points, float[][] projected,
+                                    int a, int b, double zLevel) {
         double za = points.get(a)[2];
         double zb = points.get(b)[2];
-
-        if ((za - zLevel) * (zb - zLevel) >= 0) return;
+        if ((za - zLevel) * (zb - zLevel) >= 0) return null;
 
         double t = (zLevel - za) / (zb - za);
-        if (t < 0 || t > 1) return;
+        if (t < 0 || t > 1) return null;
 
-        float x = (float) (projected[a][0] + t * (projected[b][0] - projected[a][0]));
-        float y = (float) (projected[a][1] + t * (projected[b][1] - projected[a][1]));
-
-        canvas.drawPoint(x, y, paint);
+        return new float[]{
+                (float) (projected[a][0] + t * (projected[b][0] - projected[a][0])),
+                (float) (projected[a][1] + t * (projected[b][1] - projected[a][1]))
+        };
     }
 
     private static void drawSilhouetteEdges(Canvas canvas, List<double[]> points, boolean[] valid,
@@ -461,10 +476,7 @@ public class Plot3DRenderer {
         return new int[]{r, g, b};
     }
 
-    private static void drawFloorGrid(Canvas canvas,
-                                      double minX, double maxX, double minY, double maxY, double minZ,
-                                      double cx, double cy, double cz,
-                                      double rangeX, double rangeY, double rangeZ,
+    private static void drawFloorGrid(Canvas canvas, Plot3DData data,
                                       double cosZ, double sinZ, double cosX, double sinX,
                                       float projCX, float projCY, float fitScale, int width, int height) {
 
@@ -481,14 +493,14 @@ public class Plot3DRenderer {
         int n = 6;
         for (int i = 0; i <= n; i++) {
             double frac = (double) i / n;
-            double xVal = minX + frac * rangeX;
-            float[] a = projectToFit(new double[]{xVal, minY, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-            float[] b = projectToFit(new double[]{xVal, maxY, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            double xVal = data.minX + frac * data.rangeX;
+            float[] a = projectToFit(new double[]{xVal, data.minY, data.minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            float[] b = projectToFit(new double[]{xVal, data.maxY, data.minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             canvas.drawLine(a[0], a[1], b[0], b[1], gridPaint);
 
-            double yVal = minY + frac * rangeY;
-            float[] c = projectToFit(new double[]{minX, yVal, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-            float[] d = projectToFit(new double[]{maxX, yVal, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            double yVal = data.minY + frac * data.rangeY;
+            float[] c = projectToFit(new double[]{data.minX, yVal, data.minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            float[] d = projectToFit(new double[]{data.maxX, yVal, data.minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             canvas.drawLine(c[0], c[1], d[0], d[1], gridPaint);
 
             canvas.drawText(formatTick(xVal), a[0] - 8, a[1] + 12, gridLabelPaint);
@@ -498,8 +510,7 @@ public class Plot3DRenderer {
 
     private static void drawFloorShadow(Canvas canvas, List<double[]> points, boolean[] valid,
                                         int rows, int cols, double minZ,
-                                        double cx, double cy, double cz,
-                                        double rangeX, double rangeY, double rangeZ,
+                                        Plot3DData data,
                                         double cosZ, double sinZ, double cosX, double sinX,
                                         float projCX, float projCY, float fitScale, int width, int height) {
 
@@ -524,10 +535,10 @@ public class Plot3DRenderer {
                 double[] s2 = {points.get(i2)[0], points.get(i2)[1], minZ};
                 double[] s3 = {points.get(i3)[0], points.get(i3)[1], minZ};
 
-                float[] p0 = projectToFit(s0, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-                float[] p1 = projectToFit(s1, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-                float[] p2 = projectToFit(s2, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-                float[] p3 = projectToFit(s3, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+                float[] p0 = projectToFit(s0, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+                float[] p1 = projectToFit(s1, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+                float[] p2 = projectToFit(s2, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+                float[] p3 = projectToFit(s3, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
 
                 Path path = new Path();
                 path.moveTo(p0[0], p0[1]);
@@ -540,12 +551,13 @@ public class Plot3DRenderer {
         }
     }
 
-    private static void drawAxes(Canvas canvas,
-                                 double minX, double maxX, double minY, double maxY, double minZ, double maxZ,
-                                 double cx, double cy, double cz,
-                                 double rangeX, double rangeY, double rangeZ,
+    private static void drawAxes(Canvas canvas, Plot3DData data,
                                  double cosZ, double sinZ, double cosX, double sinX,
                                  float projCX, float projCY, float fitScale, int width, int height) {
+
+        double minX = data.minX, maxX = data.maxX;
+        double minY = data.minY, maxY = data.maxY;
+        double minZ = data.minZ, maxZ = data.maxZ;
 
         Paint axisPaint = new Paint();
         axisPaint.setStrokeWidth(2.5f);
@@ -578,8 +590,8 @@ public class Plot3DRenderer {
 
         for (int a = 0; a < 3; a++) {
             axisPaint.setColor(axisColors[a]);
-            float[] p1 = projectToFit(axisStart[a], cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
-            float[] p2 = projectToFit(axisEnd[a], cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            float[] p1 = projectToFit(axisStart[a], data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            float[] p2 = projectToFit(axisEnd[a], data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             canvas.drawLine(p1[0], p1[1], p2[0], p2[1], axisPaint);
 
             float dx = p2[0] - p1[0];
@@ -606,20 +618,20 @@ public class Plot3DRenderer {
         for (int t = 0; t <= numTicks; t++) {
             double frac = (double) t / numTicks;
 
-            double xVal = minX + frac * rangeX;
-            float[] tp = projectToFit(new double[]{xVal, minY, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            double xVal = minX + frac * data.rangeX;
+            float[] tp = projectToFit(new double[]{xVal, minY, minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             axisPaint.setColor(axisColors[0]);
             canvas.drawLine(tp[0], tp[1] - 4, tp[0], tp[1] + 4, axisPaint);
             canvas.drawText(formatTick(xVal), tp[0] - 10, tp[1] + 16, tickPaint);
 
-            double yVal = minY + frac * rangeY;
-            float[] tp2 = projectToFit(new double[]{minX, yVal, minZ}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            double yVal = minY + frac * data.rangeY;
+            float[] tp2 = projectToFit(new double[]{minX, yVal, minZ}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             axisPaint.setColor(axisColors[1]);
             canvas.drawLine(tp2[0] - 4, tp2[1], tp2[0] + 4, tp2[1], axisPaint);
             canvas.drawText(formatTick(yVal), tp2[0] - 22, tp2[1] + 14, tickPaint);
 
-            double zVal = minZ + frac * rangeZ;
-            float[] tp3 = projectToFit(new double[]{minX, minY, zVal}, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
+            double zVal = minZ + frac * data.rangeZ;
+            float[] tp3 = projectToFit(new double[]{minX, minY, zVal}, data, cosZ, sinZ, cosX, sinX, projCX, projCY, fitScale, width, height);
             axisPaint.setColor(axisColors[2]);
             canvas.drawLine(tp3[0] - 4, tp3[1], tp3[0] + 4, tp3[1], axisPaint);
             canvas.drawText(formatTick(zVal), tp3[0] - 34, tp3[1] + 4, tickPaint);
@@ -670,11 +682,11 @@ public class Plot3DRenderer {
         return String.format("%.2f", val);
     }
 
-    private static float[] projectToFit(double[] p, double cx, double cy, double cz,
-                                        double rangeX, double rangeY, double rangeZ,
+    private static float[] projectToFit(double[] p, Plot3DData data,
                                         double cosZ, double sinZ, double cosX, double sinX,
                                         float projCX, float projCY, float fitScale, int width, int height) {
-        double[] rot = rotatePoint(p, cx, cy, cz, rangeX, rangeY, rangeZ, cosZ, sinZ, cosX, sinX);
+        double[] rot = rotatePoint(p, data.cx, data.cy, data.cz,
+                data.rangeX, data.rangeY, data.rangeZ, cosZ, sinZ, cosX, sinX);
         float screenX = width / 2f + (float) (rot[0] - projCX) * fitScale;
         float screenY = height / 2f - (float) (rot[2] - projCY) * fitScale;
         return new float[]{screenX, screenY};
@@ -707,10 +719,14 @@ public class Plot3DRenderer {
         }
 
         if (sameX > 1 && n % sameX == 0) {
-            return new int[]{n / sameX, sameX};
+            // Column-major ordering: sameX consecutive points share an x value,
+            // so sameX is the number of rows.
+            return new int[]{sameX, n / sameX};
         }
         if (sameY > 1 && n % sameY == 0) {
-            return new int[]{sameY, n / sameY};
+            // Row-major ordering: sameY consecutive points share a y value,
+            // so sameY is the number of columns.
+            return new int[]{n / sameY, sameY};
         }
 
         int sq = (int) Math.sqrt(n);

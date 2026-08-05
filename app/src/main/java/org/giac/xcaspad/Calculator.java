@@ -69,7 +69,13 @@ public class Calculator {
             if (Plot3DRenderer.is3DPlotResult(result)) {
                 int plotWidth = (int) (AppSpace.density * 360);
                 int plotHeight = (int) (AppSpace.density * 360);
-                operation.setBmpOutput(Plot3DRenderer.renderPlot3D(result, plotWidth, plotHeight));
+                Plot3DRenderer.Plot3DData data = Plot3DRenderer.parse(result);
+                if (data != null) {
+                    operation.setPlot3DData(data);
+                    operation.setBmpOutput(Plot3DRenderer.render(data, plotWidth, plotHeight, 25f, 40f, 1f));
+                } else {
+                    operation.setBmpOutput(getImageBytes(result, 0.204, 0.369, 0.047));
+                }
                 operation.setStrOutput(input);
             } else if (PlotRenderer.isPlotResult(result)) {
                 int plotWidth = (int) (AppSpace.density * 360);

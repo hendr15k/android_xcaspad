@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import org.kde.necessitas.mucephi.android_xcas.Plot3DView;
 import org.kde.necessitas.mucephi.android_xcas.R;
 
 import java.util.ArrayList;
@@ -18,6 +19,9 @@ import java.util.List;
  */
 
 public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.ViewHolder> {
+
+    private static final int VIEW_TYPE_NORMAL = 0;
+    private static final int VIEW_TYPE_3D = 1;
 
     private List<HolderOperation> mDataset = new ArrayList<HolderOperation>();
     private InputListener inputListener;
@@ -45,6 +49,16 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
         }
     }
 
+    public static class ViewHolder3D extends ViewHolder {
+
+        public Plot3DView plot3DOutput;
+
+        public ViewHolder3D(View v) {
+            super(v);
+            plot3DOutput = v.findViewById(R.id.plot3d_output);
+        }
+    }
+
     public interface InputListener{
 
         public void onInputClick(String result);
@@ -61,7 +75,22 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
 
 
     @Override
+    public int getItemViewType(int position) {
+        HolderOperation op = mDataset.get(position);
+        if (op != null && op.getPlot3DData() != null) {
+            return VIEW_TYPE_3D;
+        }
+        return VIEW_TYPE_NORMAL;
+    }
+
+    @Override
     public AdapterOperations.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+        if (viewType == VIEW_TYPE_3D) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.row_prettyprint_3d, parent, false);
+            return new ViewHolder3D(v);
+        }
 
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.row_prettyprint_operation, parent, false);
@@ -74,6 +103,10 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
 
+        if (holder instanceof ViewHolder3D) {
+            bind3D((ViewHolder3D) holder, position);
+            return;
+        }
 
         Bitmap bitmapInput = mDataset.get(position).getBmpInput();
 
@@ -133,6 +166,62 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
             }
         });
 
+    }
+
+    private void bind3D(final ViewHolder3D holder, final int position) {
+        HolderOperation op = mDataset.get(position);
+
+        Bitmap bitmapInput = op.getBmpInput();
+        if (bitmapInput != null) {
+            holder.imgInput.setImageBitmap(bitmapInput);
+        }
+
+        holder.plot3DOutput.setPlotData(op.getPlot3DData());
+
+        holder.imgInput.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onInputClick(mDataset.get(pos).getStrInput());
+                }
+            }
+        });
+
+        holder.plot3DOutput.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onOutputClick(mDataset.get(pos).getStrOutput());
+                }
+            }
+        });
+
+        holder.imgInput.setOnCreateContextMenuListener(menuListener);
+        holder.plot3DOutput.setOnCreateContextMenuListener(menuListener);
+
+        holder.imgInput.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onInputLongClick(v, pos);
+                }
+                return true;
+            }
+        });
+
+        holder.plot3DOutput.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    inputListener.onOutputLongClick(v, pos);
+                }
+                return true;
+            }
+        });
     }
 
     public HolderOperation remove(int position){

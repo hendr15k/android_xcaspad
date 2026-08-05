@@ -2,6 +2,8 @@ package org.kde.necessitas.mucephi.android_xcas.adapteroperations;
 
 import android.graphics.Bitmap;
 
+import org.kde.necessitas.mucephi.android_xcas.Plot3DRenderer;
+
 /**
  * Created by leonel on 24/11/17.
  */
@@ -12,6 +14,7 @@ public class HolderOperation {
     private String str_output;
     private Bitmap bmp_input;
     private Bitmap bmp_output;
+    private Plot3DRenderer.Plot3DData plot3DData;
 
     public String getStrInput() {
         return str_input;
@@ -43,5 +46,13 @@ public class HolderOperation {
 
     public void setBmpOutput(Bitmap bmp_output) {
         this.bmp_output = bmp_output;
+    }
+
+    public Plot3DRenderer.Plot3DData getPlot3DData() {
+        return plot3DData;
+    }
+
+    public void setPlot3DData(Plot3DRenderer.Plot3DData plot3DData) {
+        this.plot3DData = plot3DData;
     }
 }

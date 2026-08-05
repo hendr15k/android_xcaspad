@@ -23,6 +23,7 @@
     <string name="search_hint">Search history…</string>
     <string name="search_no_results">No matches found</string>
     <string name="search_results_found">%d matches found</string>
+    <string name="search_results_title">Search results</string>
     <string name="action_bookmarks">Bookmarks</string>
     <string name="bookmarks_clear">Clear</string>
     <string name="bookmark_add">Bookmark expression</string>

@@ -43,6 +43,7 @@ import androidx.appcompat.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -441,37 +442,65 @@ public class XcasPadActivity extends AppCompatActivity
         if (query == null || query.trim().isEmpty()) {
             return;
         }
-        List<String> sessionMatches = new ArrayList<>();
+        List<String> matches = new ArrayList<>();
         for (HolderOperation op : operations) {
-            if (op.getStrInput() != null && op.getStrInput().contains(query)) {
-                sessionMatches.add(op.getStrInput());
+            if (op.getStrInput() != null && op.getStrInput().contains(query)
+                    && !matches.contains(op.getStrInput())) {
+                matches.add(op.getStrInput());
             }
         }
-        List<String> historyMatches = History.get(this).snapshot();
-        List<String> finalMatches = new ArrayList<>();
-        for (String h : historyMatches) {
-            if (h.contains(query) && !sessionMatches.contains(h)) {
-                finalMatches.add(h);
+        for (String h : History.get(this).snapshot()) {
+            if (h.contains(query) && !matches.contains(h)) {
+                matches.add(h);
             }
         }
-        sessionMatches.addAll(finalMatches);
 
-        if (sessionMatches.isEmpty()) {
+        if (matches.isEmpty()) {
             showSnack(getString(R.string.search_no_results));
             return;
         }
 
-        HistoryDialog.show(this, History.get(this), new HistoryDialog.Listener() {
+        showSearchResultsDialog(matches);
+    }
+
+    private void showSearchResultsDialog(final List<String> matches) {
+        final android.widget.ListView listView = new android.widget.ListView(this);
+        listView.setBackgroundColor(getResources().getColor(R.color.windowBackground));
+
+        final android.widget.ArrayAdapter<String> adapter =
+                new android.widget.ArrayAdapter<String>(
+                        this, android.R.layout.simple_list_item_1, matches) {
+                    @Override
+                    public View getView(int position, View convertView, ViewGroup parent) {
+                        View view = super.getView(position, convertView, parent);
+                        android.widget.TextView text = view.findViewById(android.R.id.text1);
+                        text.setTextColor(getResources().getColor(R.color.primaryText));
+                        text.setTextSize(16f);
+                        text.setSingleLine(false);
+                        return view;
+                    }
+                };
+        listView.setAdapter(adapter);
+
+        final AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.search_results_title)
+                .setView(listView)
+                .setNegativeButton(R.string.output_dialog_dismiss, null)
+                .create();
+
+        listView.setOnItemClickListener(new android.widget.AdapterView.OnItemClickListener() {
             @Override
-            public void onSelected(String selected) {
+            public void onItemClick(android.widget.AdapterView<?> parent, View view,
+                                    int position, long id) {
                 EditText input = findViewById(R.id.txt_input);
+                String selected = adapter.getItem(position);
                 input.setText(selected);
                 input.setSelection(selected.length());
+                dialog.dismiss();
             }
         });
-        // We'll just toast the count of matches for now since HistoryDialog only shows history snapshot.
-        // To show actual search results, a custom dialog would be better, but let's keep it simple.
-        showSnack(getString(R.string.search_results_found, sessionMatches.size()));
+
+        dialog.show();
     }
 
     @Override

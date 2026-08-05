@@ -10,6 +10,7 @@ This fork picks up where the original left off: fixing critical bugs, restoring 
 
 - **Android 16 support** — upgraded to compileSdk/targetSdk 36, AGP 8.7.3, Gradle 8.10.2
 - **Function plotting restored** — `plot(sin(x))`, `plot(x^2, x, -3, 3)` etc. render actual graphs again (was disabled in the original)
+- **Interactive 3D plotting** — `plot3d(...)` surfaces can be rotated by dragging and zoomed by pinching
 - **Critical crash fixes** — JNI memory leaks, null pointer exceptions, ClassNotFoundException on Material Components, stale RecyclerView positions
 - **Session persistence** — save and restore calculator sessions
 - **LaTeX export & Markdown sharing**

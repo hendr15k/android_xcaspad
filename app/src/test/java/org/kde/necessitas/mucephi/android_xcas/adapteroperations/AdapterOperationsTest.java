@@ -62,4 +62,15 @@ public class AdapterOperationsTest {
         assertEquals(op2, adapter.getItem(0));
         assertEquals(op1, adapter.getItem(1));
     }
+
+    @Test
+    public void testGetItemViewType_3D() {
+        HolderOperation op = new HolderOperation();
+        op.setPlot3DData(new org.kde.necessitas.mucephi.android_xcas.Plot3DRenderer.Plot3DData());
+        dataset.add(op);
+
+        int idx = dataset.size() - 1;
+        assertEquals(1, adapter.getItemViewType(idx));
+        assertEquals(0, adapter.getItemViewType(0));
+    }
 }
