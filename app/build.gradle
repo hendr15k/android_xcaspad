@@ -16,8 +16,8 @@ android {
         applicationId "org.kde.necessitas.mucephi.android_xcas"
         minSdkVersion 15
         targetSdkVersion 36
-        versionCode 23
-        versionName "1.18.0"
+        versionCode 24
+        versionName "1.19.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
