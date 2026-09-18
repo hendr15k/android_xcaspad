@@ -46,31 +46,31 @@ public final class AideParser {
             InputStream instream = context.getAssets().open("help_xcas.json");
 
             if (instream != null) {
-
-                InputStreamReader inputreader = new InputStreamReader(instream);
-                BufferedReader buffreader = new BufferedReader(inputreader);
-
-                try {
-                    String line;
-
-                    while ((line = buffreader.readLine()) != null){
-                        JSONObject function = new JSONObject(line);
-                        function.put("describe", function.getJSONObject("langs").getString(index_lang_help));
-                        function.put("related", JArrayToList(function.getJSONArray("related")));
-                        function.put("examples", JArrayToList(function.getJSONArray("examples")));
-                        mDataset.add(function);
-                    }
-                } finally {
-                    buffreader.close();
-                    inputreader.close();
-                    instream.close();
-                }
+                parseLines(new BufferedReader(new InputStreamReader(instream)), index_lang_help);
+                instream.close();
             }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
         return mDataset;
+    }
+
+    /** Parses one JSON help object per line; extracted for unit testing without Android assets. */
+    static void parseLines(BufferedReader buffreader, String indexLangHelp) throws Exception {
+        try {
+            String line;
+
+            while ((line = buffreader.readLine()) != null){
+                JSONObject function = new JSONObject(line);
+                function.put("describe", function.getJSONObject("langs").getString(indexLangHelp));
+                function.put("related", JArrayToList(function.getJSONArray("related")));
+                function.put("examples", JArrayToList(function.getJSONArray("examples")));
+                mDataset.add(function);
+            }
+        } finally {
+            buffreader.close();
+        }
     }
 
     private static List<String> JArrayToList(JSONArray array){

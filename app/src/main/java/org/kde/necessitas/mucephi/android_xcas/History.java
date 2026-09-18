@@ -39,7 +39,8 @@ public final class History {
     public static final int MIN_ENTRIES = 10;
     public static final int MAX_ENTRIES = 500;
 
-    private static final String KEY_INPUT_HISTORY = "input_history";
+    private static final String KEY_INPUT_HISTORY = "input_history_ordered_v2";
+    private static final String KEY_INPUT_HISTORY_LEGACY = "input_history";
     private static final String KEY_MAX_ENTRIES = "history_max_entries";
 
     private static History instance;
@@ -50,9 +51,24 @@ public final class History {
     private History(Context context) {
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(AppSpace.PREFS_XCASPAD, Context.MODE_PRIVATE);
-        Set<String> saved = prefs.getStringSet(KEY_INPUT_HISTORY, null);
-        if (saved != null) {
-            entries.addAll(saved);
+        migrateLegacyIfNeeded();
+        List<String> saved = HistoryCodec.decode(prefs.getString(KEY_INPUT_HISTORY, null));
+        entries.addAll(saved);
+    }
+
+    /** One-time migration from the unordered string-set format (v1) to the ordered JSON format (v2). */
+    private void migrateLegacyIfNeeded() {
+        if (prefs.contains(KEY_INPUT_HISTORY)) {
+            return;
+        }
+        Set<String> legacy = prefs.getStringSet(KEY_INPUT_HISTORY_LEGACY, null);
+        if (legacy != null && !legacy.isEmpty()) {
+            List<String> sorted = new ArrayList<>(legacy);
+            Collections.sort(sorted);
+            prefs.edit()
+                    .putString(KEY_INPUT_HISTORY, HistoryCodec.encode(sorted))
+                    .remove(KEY_INPUT_HISTORY_LEGACY)
+                    .apply();
         }
     }
 
@@ -134,7 +150,7 @@ public final class History {
 
     private void persist() {
         prefs.edit()
-                .putStringSet(KEY_INPUT_HISTORY, new LinkedHashSet<>(entries))
+                .putString(KEY_INPUT_HISTORY, HistoryCodec.encode(new ArrayList<>(entries)))
                 .apply();
     }
 }

@@ -20,10 +20,11 @@ import java.util.List;
 
 public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.ViewHolder> {
 
-    private static final int VIEW_TYPE_NORMAL = 0;
-    private static final int VIEW_TYPE_3D = 1;
+    private static final int VIEW_TYPE_NORMAL = OperationList.VIEW_TYPE_NORMAL;
+    private static final int VIEW_TYPE_3D = OperationList.VIEW_TYPE_3D;
 
-    private List<HolderOperation> mDataset = new ArrayList<HolderOperation>();
+    private final OperationList operationList;
+    private List<HolderOperation> mDataset;
     private InputListener inputListener;
     private View.OnCreateContextMenuListener menuListener;
     private ChangeListener changeListener;
@@ -32,8 +33,14 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
         void onDatasetChanged();
     }
 
-    public void setChangeListener(ChangeListener listener) {
+    public void setChangeListener(final ChangeListener listener) {
         this.changeListener = listener;
+        operationList.setChangeListener(listener == null ? null : new OperationList.ChangeListener() {
+            @Override
+            public void onDatasetChanged() {
+                listener.onDatasetChanged();
+            }
+        });
     }
 
 
@@ -69,6 +76,15 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
 
     public AdapterOperations(List<HolderOperation> myDataset, InputListener inputListener, View.OnCreateContextMenuListener menuListener) {
         mDataset = myDataset;
+        this.operationList = new OperationList(mDataset);
+        this.operationList.setChangeListener(new OperationList.ChangeListener() {
+            @Override
+            public void onDatasetChanged() {
+                if (changeListener != null) {
+                    changeListener.onDatasetChanged();
+                }
+            }
+        });
         this.inputListener = inputListener;
         this.menuListener = menuListener;
     }
@@ -225,37 +241,24 @@ public class AdapterOperations extends RecyclerView.Adapter<AdapterOperations.Vi
     }
 
     public HolderOperation remove(int position){
-        if (position < 0 || position >= mDataset.size()) {
-            return null;
-        }
-        HolderOperation removed = mDataset.remove(position);
-        notifyDataSetChanged();
-        if (changeListener != null) {
-            changeListener.onDatasetChanged();
+        HolderOperation removed = operationList.remove(position);
+        if (removed != null) {
+            notifyDataSetChanged();
         }
         return removed;
     }
 
     public void insert(int position, HolderOperation op){
-        if (op == null) {
-            return;
-        }
-        if (position < 0 || position > mDataset.size()) {
-            position = mDataset.size();
-        }
-        mDataset.add(position, op);
-        notifyDataSetChanged();
-        if (changeListener != null) {
-            changeListener.onDatasetChanged();
+        int before = operationList.getItemCount();
+        operationList.insert(position, op);
+        if (operationList.getItemCount() != before) {
+            notifyDataSetChanged();
         }
     }
 
     public void swap(int i, int j){
-        Collections.swap(mDataset, i, j);
+        operationList.swap(i, j);
         notifyItemMoved(i, j);
-        if (changeListener != null) {
-            changeListener.onDatasetChanged();
-        }
     }
 
     @Override

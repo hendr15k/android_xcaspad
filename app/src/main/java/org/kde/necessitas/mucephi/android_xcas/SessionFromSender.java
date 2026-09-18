@@ -1,5 +1,4 @@
-/*
- *  Copyright (C) 2011 Leonel Hernández Sandoval.
+/*  Copyright (C) 2011 Leonel Hernández Sandoval.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,22 +18,25 @@
 package org.kde.necessitas.mucephi.android_xcas;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
+
+import androidx.appcompat.app.AlertDialog;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by leonel on 29/11/17.
  */
-
 public class SessionFromSender {
 
 
@@ -55,35 +57,31 @@ public class SessionFromSender {
 
                 List<String> listOperations = loadFromIntent(context);
 
-                final ProgressDialog progress = new ProgressDialog(context);
-                progress.setCancelable(false);
-                progress.setMessage("Loading session...");
+                final AlertDialog progress = new AlertDialog.Builder(context)
+                        .setMessage("Loading session...")
+                        .setCancelable(false)
+                        .create();
+                progress.show();
 
-
-                class loading extends AsyncTask<List<String>, Void, Void>{
-
-
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                final Handler mainHandler = new Handler(Looper.getMainLooper());
+                executor.execute(new Runnable() {
                     @Override
-                    protected void onPreExecute() {
-                        super.onPreExecute();
-                        progress.show();
+                    public void run() {
+                        onLoadFromSender.loadInBackground(listOperations);
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                onLoadFromSender.onFinishLoading();
+                                try {
+                                    progress.dismiss();
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        });
+                        executor.shutdown();
                     }
-
-                    @Override
-                    protected Void doInBackground(List<String>[] lists) {
-                        onLoadFromSender.loadInBackground(lists[0]);
-                        return null;
-                    }
-
-                    @Override
-                    protected void onPostExecute(Void aVoid) {
-                        super.onPostExecute(aVoid);
-                        onLoadFromSender.onFinishLoading();
-                        progress.dismiss();
-                    }
-                };
-
-                new loading().execute(listOperations);
+                });
             }
         }
     }
@@ -93,7 +91,18 @@ public class SessionFromSender {
         BufferedReader br = null;
         List<String> list = new ArrayList<String>();
 
-        Uri data = ((Activity) context).getIntent().getData();
+        Uri data = null;
+        try {
+            data = context instanceof Activity
+                    ? ((Activity) context).getIntent().getData()
+                    : null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return list;
+        }
+        if (data == null) {
+            return list;
+        }
 
         try {
             InputStream is = context.getContentResolver().openInputStream(data);
@@ -101,14 +110,7 @@ public class SessionFromSender {
                 return list;
             }
             br = new BufferedReader(new InputStreamReader(is));
-            String line;
-            boolean keepInput = true;
-            while ((line = br.readLine()) != null) {
-                if (keepInput && !line.trim().isEmpty()) {
-                    list.add(line);
-                }
-                keepInput = !keepInput;
-            }
+            list = parseSessionLines(br);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,6 +122,23 @@ public class SessionFromSender {
             }
         }
 
+        return list;
+    }
+
+    /**
+     * Extracts every other line (input lines) from a {@code .cas} reader.
+     * Extracted for unit testing without an Android runtime.
+     */
+    static List<String> parseSessionLines(BufferedReader br) throws Exception {
+        List<String> list = new ArrayList<String>();
+        String line;
+        boolean keepInput = true;
+        while ((line = br.readLine()) != null) {
+            if (keepInput && !line.trim().isEmpty()) {
+                list.add(line);
+            }
+            keepInput = !keepInput;
+        }
         return list;
     }
 }

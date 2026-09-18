@@ -15,6 +15,7 @@ This fork picks up where the original left off: fixing critical bugs, restoring 
 - **Session persistence** — save and restore calculator sessions
 - **LaTeX export & Markdown sharing**
 - **Haptic feedback** on operations
+- **v1.20.0** — ordered history/bookmarks persistence (no more scrambled order after restart), storage permissions removed, session search covers outputs & is case-insensitive, deprecated AsyncTask/ProgressDialog replaced, operation list refactored for testability (26 unit tests green)
 
 ## Features
 

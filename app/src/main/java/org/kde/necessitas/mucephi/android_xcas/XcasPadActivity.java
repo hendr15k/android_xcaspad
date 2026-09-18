@@ -18,16 +18,12 @@
 
 package org.kde.necessitas.mucephi.android_xcas;
 
-import android.Manifest;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -69,7 +65,6 @@ public class XcasPadActivity extends AppCompatActivity
     private final static int ACTIVITY_HELP = 0;
     private final static int ACTIVITY_SETTINGS = 1;
     private final static int ACTIVITY_ZOOMIN = 2;
-    private static final int PERMISSIONS_REQUEST_WRITE_EXTERNAL = 0;
 
     private RecyclerView mRecyclerView;
     private AdapterOperations mAdapter;
@@ -442,18 +437,7 @@ public class XcasPadActivity extends AppCompatActivity
         if (query == null || query.trim().isEmpty()) {
             return;
         }
-        List<String> matches = new ArrayList<>();
-        for (HolderOperation op : operations) {
-            if (op.getStrInput() != null && op.getStrInput().contains(query)
-                    && !matches.contains(op.getStrInput())) {
-                matches.add(op.getStrInput());
-            }
-        }
-        for (String h : History.get(this).snapshot()) {
-            if (h.contains(query) && !matches.contains(h)) {
-                matches.add(h);
-            }
-        }
+        List<String> matches = SessionSearch.findMatches(operations, History.get(this).snapshot(), query);
 
         if (matches.isEmpty()) {
             showSnack(getString(R.string.search_no_results));
@@ -514,8 +498,7 @@ public class XcasPadActivity extends AppCompatActivity
             return true;
         }
         else if (id == R.id.action_save_session){
-            if(requestWritePermission())
-                SaveSession.download(this, operations);
+            SaveSession.download(this, operations);
         }
         else if (id == R.id.action_share_session){
             if (operations == null || operations.isEmpty()) {
@@ -599,46 +582,6 @@ public class XcasPadActivity extends AppCompatActivity
                 if("lang".equals(changed)){
                     AideParser.reset();
                 }
-            }
-        }
-    }
-
-    private boolean requestWritePermission() {
-
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-
-            } else {
-
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        PERMISSIONS_REQUEST_WRITE_EXTERNAL);
-            }
-
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_WRITE_EXTERNAL: {
-
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    SaveSession.download(this, operations);
-
-                } else {
-
-                }
-                return;
             }
         }
     }

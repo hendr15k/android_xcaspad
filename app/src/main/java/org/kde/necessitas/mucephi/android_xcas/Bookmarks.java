@@ -27,7 +27,8 @@ import java.util.Set;
  */
 public final class Bookmarks {
 
-    private static final String KEY_BOOKMARKS = "bookmarked_inputs";
+    private static final String KEY_BOOKMARKS = "bookmarked_inputs_ordered_v2";
+    private static final String KEY_BOOKMARKS_LEGACY = "bookmarked_inputs";
 
     private static final int MAX_ENTRIES = 200;
 
@@ -39,9 +40,23 @@ public final class Bookmarks {
     private Bookmarks(Context context) {
         this.prefs = context.getApplicationContext()
                 .getSharedPreferences(AppSpace.PREFS_XCASPAD, Context.MODE_PRIVATE);
-        Set<String> saved = prefs.getStringSet(KEY_BOOKMARKS, null);
-        if (saved != null) {
-            entries.addAll(saved);
+        migrateLegacyIfNeeded();
+        entries.addAll(HistoryCodec.decode(prefs.getString(KEY_BOOKMARKS, null)));
+    }
+
+    /** One-time migration from the unordered string-set format (v1) to the ordered JSON format (v2). */
+    private void migrateLegacyIfNeeded() {
+        if (prefs.contains(KEY_BOOKMARKS)) {
+            return;
+        }
+        Set<String> legacy = prefs.getStringSet(KEY_BOOKMARKS_LEGACY, null);
+        if (legacy != null && !legacy.isEmpty()) {
+            List<String> sorted = new ArrayList<>(legacy);
+            Collections.sort(sorted);
+            prefs.edit()
+                    .putString(KEY_BOOKMARKS, HistoryCodec.encode(sorted))
+                    .remove(KEY_BOOKMARKS_LEGACY)
+                    .apply();
         }
     }
 
@@ -105,7 +120,7 @@ public final class Bookmarks {
 
     private void persist() {
         prefs.edit()
-                .putStringSet(KEY_BOOKMARKS, new LinkedHashSet<>(entries))
+                .putString(KEY_BOOKMARKS, HistoryCodec.encode(new ArrayList<>(entries)))
                 .apply();
     }
 }
