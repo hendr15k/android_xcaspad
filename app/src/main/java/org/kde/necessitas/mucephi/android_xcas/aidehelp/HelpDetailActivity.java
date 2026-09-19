@@ -75,9 +75,9 @@ public class HelpDetailActivity extends AppCompatActivity {
 
             lblDetFunctionDef.setText(describe);
 
-            buildParentItems("Examples", examples);
-            buildParentItems("Related", related);
-            buildParentItems("Arguments", arguments);
+            buildParentItems(getString(R.string.help_section_examples), examples);
+            buildParentItems(getString(R.string.help_section_related), related);
+            buildParentItems(getString(R.string.help_section_arguments), arguments);
 
         }catch (Exception e){
             e.printStackTrace();

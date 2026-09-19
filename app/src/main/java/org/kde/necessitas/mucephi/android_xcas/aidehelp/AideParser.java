@@ -56,6 +56,11 @@ public final class AideParser {
         return mDataset;
     }
 
+    /** Fallback language used when the requested help language has no text.
+     *  Covers the untranslated slots in help_xcas.json (5, 6, 7) and any
+     *  future language id without full coverage. */
+    static final String FALLBACK_LANG = "2";
+
     /** Parses one JSON help object per line; extracted for unit testing without Android assets. */
     static void parseLines(BufferedReader buffreader, String indexLangHelp) throws Exception {
         try {
@@ -63,7 +68,9 @@ public final class AideParser {
 
             while ((line = buffreader.readLine()) != null){
                 JSONObject function = new JSONObject(line);
-                function.put("describe", function.getJSONObject("langs").getString(indexLangHelp));
+                JSONObject langs = function.getJSONObject("langs");
+                String describe = describeFor(langs, indexLangHelp);
+                function.put("describe", describe);
                 function.put("related", JArrayToList(function.getJSONArray("related")));
                 function.put("examples", JArrayToList(function.getJSONArray("examples")));
                 mDataset.add(function);
@@ -71,6 +78,22 @@ public final class AideParser {
         } finally {
             buffreader.close();
         }
+    }
+
+    /** Returns the help text for the requested language, falling back to
+     *  English when the entry is missing or blank (whitespace-only).
+     *  Unknown language ids without any usable fallback still throw
+     *  JSONException, preserving the previous strict behaviour. */
+    static String describeFor(JSONObject langs, String indexLangHelp) throws JSONException {
+        String describe = langs.optString(indexLangHelp, null);
+        if (describe != null && !describe.trim().isEmpty()) {
+            return describe;
+        }
+        String fallback = langs.optString(FALLBACK_LANG, null);
+        if (fallback != null && !fallback.trim().isEmpty()) {
+            return fallback;
+        }
+        return langs.getString(indexLangHelp);
     }
 
     private static List<String> JArrayToList(JSONArray array){

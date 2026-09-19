@@ -13,5 +13,5 @@
         android:layout_weight="1"
         android:paddingBottom="5dp"
         android:paddingTop="5dp"
-        android:text="function" />
+        android:text="@string/row_placeholder_function" />
 </LinearLayout>

@@ -58,7 +58,7 @@ public class SessionFromSender {
                 List<String> listOperations = loadFromIntent(context);
 
                 final AlertDialog progress = new AlertDialog.Builder(context)
-                        .setMessage("Loading session...")
+                        .setMessage(context.getString(R.string.action_loading_session))
                         .setCancelable(false)
                         .create();
                 progress.show();

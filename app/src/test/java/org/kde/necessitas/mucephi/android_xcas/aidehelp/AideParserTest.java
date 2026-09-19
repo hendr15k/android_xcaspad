@@ -75,8 +75,9 @@ public class AideParserTest {
     }
 
     @Test
-    public void testParseLines_missingLangThrows() {
-        String json = "{\"langs\": {\"en\": \"desc\"}, \"related\": [], \"examples\": []}\n";
+    public void testParseLines_missingLangThrows() throws Exception {
+        // Unknown language id without any usable fallback stays strict.
+        String json = "{\"langs\": {}, \"related\": [], \"examples\": []}\n";
         try {
             parse(json, "xx-missing");
             assertTrue("expected JSONException for missing language", false);
@@ -84,5 +85,32 @@ public class AideParserTest {
             // Missing language key must surface instead of silently producing wrong output.
             assertTrue(expected instanceof org.json.JSONException);
         }
+    }
+
+    @Test
+    public void testParseLines_blankGermanFallsBackToEnglish() throws Exception {
+        String json = "{\"langs\": {\"2\": \"english desc\", \"5\": \" \"}, \"related\": [], \"examples\": []}\n";
+        List<JSONObject> dataset = parse(json, "5");
+
+        assertEquals(1, dataset.size());
+        assertEquals("english desc", dataset.get(0).getString("describe"));
+    }
+
+    @Test
+    public void testParseLines_missingGermanFallsBackToEnglish() throws Exception {
+        String json = "{\"langs\": {\"2\": \"english desc\"}, \"related\": [], \"examples\": []}\n";
+        List<JSONObject> dataset = parse(json, "5");
+
+        assertEquals(1, dataset.size());
+        assertEquals("english desc", dataset.get(0).getString("describe"));
+    }
+
+    @Test
+    public void testParseLines_germanPreferredWhenPresent() throws Exception {
+        String json = "{\"langs\": {\"2\": \"english desc\", \"5\": \"deutsche Beschreibung\"}, \"related\": [], \"examples\": []}\n";
+        List<JSONObject> dataset = parse(json, "5");
+
+        assertEquals(1, dataset.size());
+        assertEquals("deutsche Beschreibung", dataset.get(0).getString("describe"));
     }
 }

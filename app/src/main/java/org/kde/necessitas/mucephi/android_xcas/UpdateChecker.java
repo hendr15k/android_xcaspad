@@ -130,8 +130,8 @@ public class UpdateChecker {
         DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
         Uri uri = Uri.parse(apkUrl);
         DownloadManager.Request request = new DownloadManager.Request(uri);
-        request.setTitle("Xcas Pad Update");
-        request.setDescription("Downloading update…");
+        request.setTitle(context.getString(R.string.app_name));
+        request.setDescription(context.getString(R.string.update_downloading));
         request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
         request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "xcaspad-update.apk");
         request.setMimeType("application/vnd.android.package-archive");
