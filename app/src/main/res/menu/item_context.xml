@@ -4,51 +4,51 @@
     <item
         android:id="@+id/context_zoom_in"
         android:orderInCategory="101"
-        android:title="zoom in"
+        android:title="@string/menu_zoom_in"
         app:showAsAction="never" />
     <item
         android:id="@+id/context_copy_text"
         android:orderInCategory="101"
         app:showAsAction="never"
-        android:title="copy text" />
+        android:title="@string/menu_copy_text" />
     <item
         android:id="@+id/context_share_image"
         android:orderInCategory="101"
         app:showAsAction="never"
-        android:title="share image" />
+        android:title="@string/menu_share_image" />
     <item
         android:id="@+id/context_bookmark"
         android:orderInCategory="101"
         app:showAsAction="never"
-        android:title="bookmark" />
+        android:title="@string/menu_bookmark" />
     <item
         android:id="@+id/context_simplify"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="simplify" />
+        android:title="@string/menu_simplify"
+        app:showAsAction="never" />
     <item
         android:id="@+id/context_normal"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="normal" />
+        android:title="@string/menu_normal"
+        app:showAsAction="never" />
     <item
         android:id="@+id/context_factor"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="factor" />
+        android:title="@string/menu_factor"
+        app:showAsAction="never" />
     <item
         android:id="@+id/context_approx"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="approx" />
+        android:title="@string/menu_approx"
+        app:showAsAction="never" />
     <item
         android:id="@+id/context_exact"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="exact" />
+        android:title="@string/menu_exact"
+        app:showAsAction="never" />
     <item
         android:id="@+id/context_eval"
         android:orderInCategory="101"
-        app:showAsAction="never"
-        android:title="eval" />
+        android:title="@string/menu_eval"
+        app:showAsAction="never" />
 </menu>

@@ -17,7 +17,7 @@
         android:id="@+id/action_save_session"
         android:orderInCategory="100"
         app:showAsAction="never"
-        android:title="Save sesssion" />
+        android:title="@string/action_save_session" />
     <item
         android:id="@+id/action_share_session"
         android:orderInCategory="100"
@@ -32,7 +32,7 @@
         android:id="@+id/action_clear_session"
         android:orderInCategory="100"
         app:showAsAction="never"
-        android:title="Clear screen" />
+        android:title="@string/action_clear_session" />
     <item
         android:id="@+id/action_check_update"
         android:orderInCategory="110"

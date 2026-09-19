@@ -66,12 +66,13 @@ public class SettingsActivity extends AppCompatActivity {
 
         LinkedList<Lang> langs = new LinkedList<Lang>();
 
-        langs.add(new Lang(1, "French"));
+        langs.add(new Lang(1, "Français"));
         langs.add(new Lang(2, "English"));
-        langs.add(new Lang(3, "Spanish"));
-        langs.add(new Lang(4, "Greek"));
-        langs.add(new Lang(8, "Chinese"));
-        langs.add(new Lang(9, "Russian"));
+        langs.add(new Lang(3, "Español"));
+        langs.add(new Lang(4, "Ελληνικά"));
+        langs.add(new Lang(5, "Deutsch"));
+        langs.add(new Lang(8, "中文"));
+        langs.add(new Lang(9, "Русский"));
 
         ArrayAdapter<Lang> spiner_adapter = new ArrayAdapter<Lang>(this, android.R.layout.simple_spinner_item, langs);
         spiner_adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

@@ -16,6 +16,7 @@ This fork picks up where the original left off: fixing critical bugs, restoring 
 - **LaTeX export & Markdown sharing**
 - **Haptic feedback** on operations
 - **v1.20.0** — ordered history/bookmarks persistence (no more scrambled order after restart), storage permissions removed, session search covers outputs & is case-insensitive, deprecated AsyncTask/ProgressDialog replaced, operation list refactored for testability (26 unit tests green)
+- **v1.21.0** — **German language support**: full German UI (values-de, also selectable per app in Android 13+ system settings), every hard-coded English string moved into resources, "Deutsch" added to the help-language picker, and all 1347 help entries translated into German (fallback to English for entries without a German text)
 
 ## Features
 

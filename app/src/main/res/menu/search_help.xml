@@ -8,7 +8,7 @@
         android:id="@+id/txt_help_search"
         android:icon="@android:drawable/ic_menu_search"
         android:title="@string/action_search"
-        app:queryHint="Search for function"
+        app:queryHint="@string/help_search_hint"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="always"/>
 </menu>
